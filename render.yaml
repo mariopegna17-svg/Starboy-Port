@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: starboy-port
+    runtime: node
+    plan: free
+    buildCommand: npm ci --omit=dev && npm run model && npm run build
+    startCommand: npm start
+    healthCheckPath: /healthz
+    autoDeployTrigger: commit
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_ENV
+        value: production

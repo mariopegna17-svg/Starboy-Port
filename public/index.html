@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+  <meta name="theme-color" content="#050607">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="description" content="Tu pequeño compañero digital. Ojos originales, una personalidad única y un universo en tu bolsillo.">
+  <title>Starboy · tu pequeño universo</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" type="image/svg+xml" href="/icon.svg">
+  <link rel="apple-touch-icon" href="/icon-192.png">
+  <link rel="stylesheet" href="/styles.css">
+  <script>
+    window.eyeEngineReady = new Promise(resolve => {
+      let finished = false;
+      window.Module = {onRuntimeInitialized() { if (!finished) {finished = true; resolve(window.Module);} }};
+      setTimeout(() => {if (!finished) {finished = true; resolve(null);}}, 10000);
+    });
+  </script>
+  <script src="/vendor/starboy/animation_renderer.js" defer></script>
+  <script type="module" src="/js/app.js"></script>
+</head>
+<body>
+  <svg class="icon-definitions" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><defs>
+    <symbol id="i-star" viewBox="0 0 24 24"><path d="m12 2 2.8 6.2L22 9l-5.4 4.8 1.5 7.2-6.1-3.7L5.9 21l1.5-7.2L2 9l7.2-.8Z"/></symbol>
+    <symbol id="i-eyes" viewBox="0 0 24 24"><ellipse cx="7" cy="12" rx="4" ry="6"/><ellipse cx="17" cy="12" rx="4" ry="6"/><path d="M7 10v4m10-4v4"/></symbol>
+    <symbol id="i-heart" viewBox="0 0 24 24"><path d="M20.8 4.8c-2.3-2.3-6-1.8-8.8 1.3-2.8-3.1-6.5-3.6-8.8-1.3C-.8 8.8 3 15 12 21c9-6 12.8-12.2 8.8-16.2Z"/></symbol>
+    <symbol id="i-world" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="4" ry="9"/><path d="M3 12h18"/></symbol>
+    <symbol id="i-friends" viewBox="0 0 24 24"><circle cx="8" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M2 21v-3a6 6 0 0 1 12 0v3m2-7a5 5 0 0 1 6 4v3"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24"><path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="3"/><circle cx="16" cy="17" r="3"/></symbol>
+    <symbol id="i-volume" viewBox="0 0 24 24"><path d="M11 4 5 9H2v6h3l6 5ZM15 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/></symbol>
+    <symbol id="i-expand" viewBox="0 0 24 24"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20.7 13.1A9 9 0 0 1 10.9 3.3a9 9 0 1 0 9.8 9.8Z"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></symbol>
+    <symbol id="i-camera" viewBox="0 0 24 24"><path d="M3 7h4l2-3h6l2 3h4v13H3Z"/><circle cx="12" cy="13" r="4"/></symbol>
+    <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="13" rx="3"/><path d="M5 10v2a7 7 0 0 0 14 0v-2m-7 9v3m-4 0h8"/></symbol>
+    <symbol id="i-motion" viewBox="0 0 24 24"><rect x="7" y="3" width="10" height="18" rx="2"/><path d="m3 6-2 3 2 3m18 0 2 3-2 3m-10 0h2"/></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 3h14a2 2 0 0 1 2 2v16H6a2 2 0 0 1-2-2Zm0 14h16M8 7h8m-8 4h6"/></symbol>
+  </defs></svg>
+  <main id="universe" aria-label="Tu mascota Starboy">
+    <div class="ambient-glow"></div>
+    <canvas id="eyes" aria-label="Ojos animados de tu mascota"></canvas>
+    <header class="hud">
+      <button class="identity" id="identity-button" aria-label="Ver cuidados de la mascota"><span class="brand-mark">✦</span><span><strong id="pet-name">Starboy</strong><small id="personality">TU PEQUEÑO UNIVERSO</small></span></button>
+      <div class="hud-right"><span class="connection-status" id="online-status"><i></i><span>EN TU MUNDO</span></span><button class="icon-button" id="sound-toggle" aria-label="Activar sonidos" aria-pressed="false"><svg><use href="#i-volume"/></svg><span class="mute-slash"></span></button><button class="icon-button" id="immersive-button" aria-label="Modo pantalla completa"><svg><use href="#i-expand"/></svg></button></div>
+    </header>
+    <div class="mood-display"><span class="mood-dot"></span><span id="mood-label">Despertando</span><span class="mood-hint" id="mood-hint">Un pequeño universo está a punto de abrir los ojos.</span></div>
+    <nav class="dock" aria-label="Funciones de Starboy">
+      <button data-panel="eyes"><svg><use href="#i-eyes"/></svg><span>Ojos</span></button>
+      <button data-panel="care"><svg><use href="#i-heart"/></svg><span>Cuidados</span></button>
+      <button data-panel="environment"><svg><use href="#i-world"/></svg><span>Ambiente</span></button>
+      <button data-panel="meet"><svg><use href="#i-friends"/></svg><span>Encuentros</span></button>
+      <button data-panel="settings" class="dock-settings" aria-label="Ajustes"><svg><use href="#i-settings"/></svg></button>
+    </nav>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <div id="battery-card" class="battery-card" hidden><span class="eyebrow">UN POCO DE ENERGÍA</span><strong id="battery-value"></strong><span id="battery-detail"></span></div>
+    <button id="play-star" class="play-star" aria-label="Atrapar la estrella" hidden>✦</button>
+    <span class="immersive-hint">Toca para volver a los controles</span>
+  </main>
+
+  <dialog id="welcome" class="welcome-dialog">
+    <div class="welcome-spark">✦</div><span class="eyebrow">UNA PERSONALIDAD. UN PAR DE OJOS. TU COMPAÑERO.</span>
+    <h1>Es solo un<br><em>pequeño chico.</em></h1><p>Cada Starboy tiene su propia forma de ver el mundo.<br>Este está a punto de conocer el tuyo.</p>
+    <label class="welcome-name">¿Cómo lo llamamos?<input id="first-name" maxlength="24" value="Starboy" autocomplete="off"></label>
+    <button id="hatch" class="primary">Conocer a mi Starboy <span>↗</span></button><small>Gira tu iPhone en horizontal para verlo mejor.</small>
+  </dialog>
+
+  <dialog id="control-panel" class="control-panel">
+    <div class="panel-top"><div><span class="eyebrow">SU PEQUEÑO MUNDO</span><h2 id="panel-title">Ojos</h2></div><button class="icon-button" id="close-panel" aria-label="Cerrar panel"><svg><use href="#i-close"/></svg></button></div>
+    <div class="panel-body"><nav class="panel-nav" aria-label="Secciones">
+      <button data-panel="eyes"><svg><use href="#i-eyes"/></svg>Ojos</button><button data-panel="care"><svg><use href="#i-heart"/></svg>Cuidados</button><button data-panel="environment"><svg><use href="#i-world"/></svg>Ambiente</button><button data-panel="meet"><svg><use href="#i-friends"/></svg>Encuentros</button><button data-panel="diary"><svg><use href="#i-book"/></svg>Diario</button><button data-panel="settings"><svg><use href="#i-settings"/></svg>Ajustes</button>
+    </nav><div class="panel-content">
+      <section data-section="eyes"><div class="section-intro"><div><h3>Una mirada muy tuya.</h3><p>100 colores. 4 formas. 400 maneras de ser.</p></div><span class="count-badge" id="collection-count">1 / 400</span></div>
+        <div class="look-summary"><span id="current-look"></span><button class="text-button" id="random-eyes">✦ Sorpréndeme</button></div>
+        <div id="shape-tabs" class="segmented" aria-label="Forma de los ojos"><button data-shape="0">Punto</button><button data-shape="1">Círculo</button><button data-shape="2">Gato</button><button data-shape="3">Bellota</button></div>
+        <div class="catalog-tools"><input id="eye-search" type="search" placeholder="Busca un color…" aria-label="Buscar color de ojos"><label class="small-checkbox"><input id="collection-only" type="checkbox">Mis descubrimientos</label></div>
+        <div id="eye-catalog" class="eye-catalog"></div>
+      </section>
+      <section data-section="care" hidden><div class="section-intro"><div><h3>Las pequeñas cosas cuentan.</h3><p>Un poco de cariño hace un mundo de diferencia.</p></div><span id="pet-age" class="count-badge"></span></div>
+        <div class="stat-grid"><div><span>Energía</span><strong id="energy-value"></strong><meter id="energy-meter" min="0" max="100"></meter></div><div><span>Saciedad</span><strong id="hunger-value"></strong><meter id="hunger-meter" min="0" max="100"></meter></div><div><span>Felicidad</span><strong id="happiness-value"></strong><meter id="happiness-meter" min="0" max="100"></meter></div><div><span>Vínculo</span><strong id="bond-value"></strong><meter id="bond-meter" min="0" max="100"></meter></div></div>
+        <div class="action-grid"><button data-action="feed"><span>✧</span><strong>Dar de comer</strong><small>Un bocado de estrellas</small></button><button data-action="pet"><svg><use href="#i-heart"/></svg><strong>Acariciar</strong><small>Un poquito de cariño</small></button><button data-action="play"><span>✦</span><strong>Jugar</strong><small>Persigue una estrella</small></button><button data-action="sleep"><svg><use href="#i-moon"/></svg><strong id="sleep-label">Dormir</strong><small>Soñar también es vivir</small></button></div>
+        <p class="footnote">Su estado continúa evolucionando cuando cierras la app. No muere: siempre puedes cuidarlo al volver.</p>
+      </section>
+      <section data-section="environment" hidden><div class="section-intro"><div><h3>Déjale sentir tu mundo.</h3><p>Activa solo los sentidos que quieras compartir.</p></div></div>
+        <div class="sensor-list"><div><span class="sensor-icon"><svg><use href="#i-camera"/></svg></span><div><strong>Cámara y gestos</strong><small id="camera-note">Pulgar arriba, palma, victoria y dedo medio.</small></div><button data-sensor="camera" id="camera-toggle" class="sensor-toggle" aria-pressed="false">Activar</button></div><div><span class="sensor-icon"><svg><use href="#i-mic"/></svg></span><div><strong>Sonido ambiente</strong><small id="microphone-note">El ruido fuerte lo pone nervioso.</small></div><button data-sensor="microphone" id="microphone-toggle" class="sensor-toggle" aria-pressed="false">Activar</button></div><div><span class="sensor-icon"><svg><use href="#i-motion"/></svg></span><div><strong>Movimiento</strong><small id="motion-note">Inclina o agita suavemente el iPhone.</small></div><button data-sensor="motion" id="motion-toggle" class="sensor-toggle" aria-pressed="false">Activar</button></div></div>
+        <div class="environment-sliders"><label><span>Temperatura <strong id="temperature-value">22 °C</strong></span><input id="temperature" type="range" min="-5" max="45" value="22"><small>Simulada: Safari no expone un termómetro ambiental.</small></label><label><span>Ruido <strong id="noise-value">0 %</strong></span><input id="noise" type="range" min="0" max="100" value="0"><small>Simulado mientras el micrófono está apagado.</small></label></div>
+        <div class="manual-gestures"><span class="eyebrow">TAMBIÉN PUEDES PROBARLO SIN SENSORES</span><div><button data-action="thumbs">👍 Batería</button><button data-action="middle">👎 Triste</button><button data-action="shake">↝ Sacudir</button><button data-action="calm">♡ Calmar</button></div></div><p class="footnote">Cámara y audio se procesan en tu dispositivo. No se graban ni se envían al servidor. Los permisos requieren HTTPS.</p>
+      </section>
+      <section data-section="meet" hidden><div class="section-intro"><div><h3>Pequeños encuentros.</h3><p>Dos pantallas. Dos mascotas. Un mismo universo.</p></div><span id="meet-status" class="count-badge">Sin conectar</span></div>
+        <div class="meet-card"><span class="room-orbit">✦ · ✦</span><p>Comparte un código con otro iPhone. Al entrar en la misma sala, vuestras mascotas se conocerán y descubrirán sus ojos.</p><form id="room-form"><input id="room-code" placeholder="CÓDIGO DE SALA" aria-label="Código de sala" minlength="4" maxlength="12" pattern="[A-Za-z0-9]{4,12}" autocapitalize="characters" autocomplete="off" required><button class="primary" type="submit">Entrar ↗</button></form><button id="new-room" class="text-button">Crear un código nuevo</button></div>
+        <div id="peer-list" class="peer-list"></div><div id="meet-actions" class="meet-actions" hidden><button data-meet="wave">👋 Saludar</button><button data-meet="play">✦ Jugar juntos</button><button data-meet="swap">↔ Intercambiar ojos</button><button id="leave-room">Salir de la sala</button></div>
+        <p class="footnote">La sala comparte el nombre, los ojos y las acciones de la mascota. No detecta otros dispositivos cercanos automáticamente. Las salas desaparecen al desconectar.</p>
+      </section>
+      <section data-section="diary" hidden><div class="section-intro"><div><h3>Me acuerdo de ti.</h3><p>Pequeños momentos de una pequeña vida.</p></div></div><div id="memory-list" class="memory-list"></div></section>
+      <section data-section="settings" hidden><div class="section-intro"><div><h3>A su manera. A la tuya.</h3><p>Todo lo que necesita para sentirse en casa.</p></div></div>
+        <label class="setting-row"><span>Su nombre</span><input id="rename" maxlength="24" aria-label="Nombre de tu mascota" autocomplete="off"></label><div class="setting-row"><span>Personalidad</span><strong id="trait-name"></strong></div>
+        <label class="setting-row"><span>Sonidos de la mascota<small>Pequeños tonos al jugar y recibir cariño</small></span><input id="sound-setting" type="checkbox" class="switch"></label><label class="setting-row"><span>Reducir movimiento<small>Animaciones suaves y menos partículas</small></span><input id="reduced-motion" type="checkbox" class="switch"></label>
+        <button id="install-button" class="wide-button">Añadir a la pantalla de inicio ↗</button><p id="install-help" class="footnote">En iPhone: Safari → Compartir → Añadir a pantalla de inicio. La app podrá abrirse a pantalla completa y funcionar sin conexión.</p>
+        <div class="backup-actions"><button id="export-pet">Exportar mi mascota ↓</button><label class="import-button">Importar mascota ↑<input id="import-pet" type="file" accept="application/json,.json" hidden></label></div><button id="reset-pet" class="danger-button">Comenzar una nueva vida</button><p class="footnote" id="engine-note">Port web experimental inspirado en Starboy de CREATURE. Los cuidados y encuentros son funciones de esta adaptación.</p>
+      </section>
+    </div></div>
+  </dialog>
+  <div id="rotate-screen" class="rotate-screen"><span class="rotate-phone">▯</span><span class="eyebrow">UN POQUITO MÁS DE ESPACIO</span><h2>Gira tu iPhone.</h2><p>Tu pequeño compañero se siente<br>mejor en horizontal.</p><button id="portrait-continue" class="text-button">Continuar en vertical ↗</button></div>
+  <script>if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
+</body>
+</html>

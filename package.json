@@ -1,0 +1,21 @@
+{
+  "name": "starboy-port",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Una mascota digital para iPhone, con los ojos de Starboy y un mundo propio.",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "build": "node scripts/check-assets.js",
+    "model": "node scripts/download-model.js",
+    "test": "node --test tests/*.test.js",
+    "test:browser": "playwright test"
+  },
+  "dependencies": {
+    "@mediapipe/tasks-vision": "1.1.0",
+    "ws": "8.22.0"
+  },
+  "devDependencies": { "@playwright/test": "1.64.0" }
+}
