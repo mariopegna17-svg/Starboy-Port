@@ -38,10 +38,10 @@ function update(){
   $('#temperature-value').textContent=`${pet.environment.temperature} °C`;$('#noise-value').textContent=`${Math.round(pet.environment.noise)} %`;
   if(document.activeElement!==$('#rename'))$('#rename').value=pet.name;
 }
-function perform(type){
+function perform(type,{sensor=false}={}){
   if(type==='pet'&&Date.now()-lastPet<700)return;if(type==='pet')lastPet=Date.now();
   action(pet,type);if(['pet','feed','calm'].includes(type))eyes.spark(type==='pet'?'heart':'star');if(['play','feed','pet'].includes(type))tone(type);haptic();
-  if(type==='play'){closePanel();startGame();}else if(type==='sleep')toast(pet.asleep?'Buenas noches, pequeño.':'Hola de nuevo, pequeño.');else if(type==='feed')toast('Un bocado de estrellas. Saciedad +25.');else if(type==='thumbs')showBattery();else if(type==='shake')toast('¡Demasiadas vueltas! Dale un momento.');else if(type==='middle')toast('Un poco triste. Una caricia puede ayudar.');update();save();
+  if(type==='play'){if(sensor){eyes.spark();toast('¡Victoria! Le has alegrado el día.');}else{closePanel();startGame();}}else if(type==='sleep')toast(pet.asleep?'Buenas noches, pequeño.':'Hola de nuevo, pequeño.');else if(type==='feed')toast('Un bocado de estrellas. Saciedad +25.');else if(type==='thumbs')showBattery();else if(type==='shake')toast('¡Demasiadas vueltas! Dale un momento.');else if(type==='middle')toast('Un poco triste. Una caricia puede ayudar.');update();save();
 }
 async function showBattery(){
   let value=`${Math.round(pet.energy)}%`,detail='Energía de tu mascota · Safari no expone la batería del iPhone.';
@@ -55,10 +55,12 @@ $('#play-star').addEventListener('click',()=>{playCount++;eyes.spark();tone('pla
 
 const sensors=new Sensors({
   noise:value=>{pet.environment.noise=Math.round(value);$('#noise').value=value;update();},
-  motion:()=>perform('shake'),gesture:perform,gaze:(x,y)=>eyes.look(x,y),
+  motion:()=>perform('shake'),gesture:type=>perform(type,{sensor:true}),gaze:(x,y)=>eyes.look(x,y),
   light:value=>{if(value<.09&&!pet.asleep&&Date.now()-(pet.lastDark||0)>90000){pet.lastDark=Date.now();affect(pet,'sleepy',5000);update();}},
-  status:(name,state,message)=>{const button=$(`#${name}-toggle`);button.textContent=state==='loading'?'Preparando…':state==='on'?'Apagar':'Activar';button.setAttribute('aria-pressed',String(state==='on'));button.dataset.state=state;button.disabled=state==='loading';if(message)$(`#${name}-note`).textContent=message;if(state==='error')toast(message);if(name==='microphone')$('#noise').disabled=state==='on';}
+  status:(name,state,message)=>{const button=$(`#${name}-toggle`);button.textContent=state==='loading'?'Cancelar':state==='on'?'Apagar':state==='paused'?'Reanudar':'Activar';button.setAttribute('aria-pressed',String(state==='on'));button.dataset.state=state;button.disabled=false;$(`#${name}-note`).textContent=message;if(state==='error')toast(message);if(name==='microphone')$('#noise').disabled=state==='on';if(name==='camera')$('#camera-preview').hidden=!['loading','on'].includes(state);}
 });
+$('#camera-close').addEventListener('click',()=>sensors.stop('camera'));
+function moveCamera(host){if($('#camera-preview').parentElement!==host){host.append($('#camera-preview'));if(['loading','on'].includes(sensors.state.camera)&&sensors.video.srcObject)sensors.video.play().catch(()=>{});}}
 
 const profile=()=>({id:pet.id,name:pet.name,palette:pet.palette,shape:pet.shape,trait:pet.trait});
 const meetings=new Meetings({profile,
@@ -77,12 +79,12 @@ const meetings=new Meetings({profile,
 function openPanel(name){
   activePanel=name;const titles={eyes:'Ojos',care:'Cuidados',environment:'Ambiente',meet:'Encuentros',diary:'Diario',settings:'Ajustes'};$('#panel-title').textContent=titles[name];
   $$('[data-section]').forEach(s=>s.hidden=s.dataset.section!==name);$$('.panel-nav [data-panel]').forEach(b=>b.classList.toggle('active',b.dataset.panel===name));
-  if(!panel.open)panel.showModal();$('.panel-content').scrollTop=0;update();if(name==='eyes'){catalogShape=pet.shape;renderCatalog();}if(name==='diary')renderDiary();
+  moveCamera($('#camera-panel'));if(!panel.open)panel.showModal();$('.panel-content').scrollTop=0;update();if(name==='eyes'){catalogShape=pet.shape;renderCatalog();}if(name==='diary')renderDiary();
 }
-function closePanel(){panel.close();activePanel='';}
+function closePanel(){panel.close();activePanel='';moveCamera($('#camera-home'));}
 $$('[data-panel]').forEach(button=>button.addEventListener('click',()=>openPanel(button.dataset.panel)));$('#identity-button').addEventListener('click',()=>openPanel('care'));$('#close-panel').addEventListener('click',closePanel);
 panel.addEventListener('click',event=>{if(event.target===panel){const rect=panel.getBoundingClientRect();if(event.clientX<rect.left||event.clientX>rect.right||event.clientY<rect.top||event.clientY>rect.bottom)closePanel();}});
-panel.addEventListener('close',()=>activePanel='');$$('[data-action]').forEach(b=>b.addEventListener('click',()=>perform(b.dataset.action)));
+panel.addEventListener('close',()=>{activePanel='';if(!panel.open)moveCamera($('#camera-home'));});$$('[data-action]').forEach(b=>b.addEventListener('click',()=>perform(b.dataset.action)));
 $$('[data-sensor]').forEach(b=>b.addEventListener('click',()=>sensors.toggle(b.dataset.sensor)));
 $('#temperature').value=pet.environment.temperature;$('#temperature').addEventListener('input',event=>{pet.environment.temperature=Number(event.target.value);pet.effect=null;update();save();});$('#noise').value=pet.environment.noise;$('#noise').addEventListener('input',event=>{pet.environment.noise=Number(event.target.value);pet.effect=null;update();save();});
 
@@ -114,9 +116,16 @@ $$('[data-meet]').forEach(b=>b.addEventListener('click',()=>{
 function toggleSound(value){pet.settings.sound=value;update();save();if(value)tone();}
 $('#sound-toggle').addEventListener('click',()=>toggleSound(!pet.settings.sound));$('#sound-setting').addEventListener('change',event=>toggleSound(event.target.checked));$('#reduced-motion').addEventListener('change',event=>{pet.settings.reducedMotion=event.target.checked;update();save();});$('#rename').addEventListener('change',event=>{pet.name=event.target.value.trim().slice(0,24)||'Starboy';update();save();meetings.refresh();});
 $('#export-pet').addEventListener('click',()=>{save();const url=URL.createObjectURL(new Blob([JSON.stringify(pet,null,2)],{type:'application/json'}));const link=document.createElement('a');link.href=url;link.download='mi-starboy.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),30000);toast('Guarda el archivo para llevar tu mascota a otro dispositivo.');});
-$('#import-pet').addEventListener('change',async event=>{const file=event.target.files[0];if(!file)return;try{if(file.size>500000)throw new Error();const imported=restorePet(await file.text());if(!imported)throw new Error();if(!confirm('¿Sustituir tu mascota actual por la del archivo?'))return;sensors.stopAll();meetings.leave();pet=imported;eyes.pet=pet;eyes.setLook(pet.palette,pet.shape);$('#temperature').value=pet.environment.temperature;$('#noise').value=pet.environment.noise;update();save();toast('Tu pequeño compañero vuelve a casa.');}catch{toast('Este archivo no contiene una mascota válida.');}finally{event.target.value='';}});
-$('#reset-pet').addEventListener('click',()=>{if(!confirm('¿Comenzar una nueva vida? Exporta antes tu mascota si quieres conservarla.'))return;sensors.stopAll();meetings.leave();clearTimeout(playTimer);$('#play-star').hidden=true;pet=createPet();eyes.pet=pet;eyes.setLook(pet.palette,pet.shape);remember(pet,'Abrí los ojos por primera vez.');$('#temperature').value=22;$('#noise').value=0;update();save();closePanel();$('#first-name').value='Starboy';welcomePending=true;syncWelcome();});
+$('#import-pet').addEventListener('change',async event=>{const file=event.target.files[0];if(!file)return;try{if(file.size>500000)throw new Error();const imported=restorePet(await file.text());if(!imported)throw new Error();if(!confirm('¿Sustituir tu mascota actual por la del archivo?'))return;sensors.stopAll();meetings.leave();seenPeers.clear();clearTimeout(playTimer);$('#play-star').hidden=true;pet=imported;eyes.pet=pet;eyes.setLook(pet.palette,pet.shape);$('#temperature').value=pet.environment.temperature;$('#noise').value=pet.environment.noise;update();save();welcomePending=pet.hatched!==true;$('#first-name').value=pet.name;closePanel();syncWelcome();toast('Tu pequeño compañero vuelve a casa.');}catch{toast('Este archivo no contiene una mascota válida.');}finally{event.target.value='';}});
+$('#reset-pet').addEventListener('click',()=>{if(!confirm('¿Comenzar una nueva vida? Exporta antes tu mascota si quieres conservarla.'))return;sensors.stopAll();meetings.leave();seenPeers.clear();clearTimeout(playTimer);$('#play-star').hidden=true;pet=createPet();eyes.pet=pet;eyes.setLook(pet.palette,pet.shape);remember(pet,'Abrí los ojos por primera vez.');$('#temperature').value=22;$('#noise').value=0;update();save();closePanel();$('#first-name').value='Starboy';welcomePending=true;syncWelcome();});
 window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();installPrompt=event;});$('#install-button').addEventListener('click',async()=>{if(installPrompt){await installPrompt.prompt();installPrompt=null;}else toast('En Safari: Compartir → Añadir a pantalla de inicio. Desactiva el bloqueo de orientación del iPhone.');});
+$('#boot-close').addEventListener('click',()=>bootSequence.finish?.());
+$('#replay-boot').addEventListener('click',async()=>{
+  if(bootPending)return;sensors.pause();closePanel();bootPending=true;eyes.suspended=true;
+  bootSequence.elapsed=0;document.body.classList.add('booting');$('#universe').inert=true;$('#first-boot-screen').hidden=false;$('#boot-close').hidden=false;
+  try{await bootSequence.play();}catch(error){toast(error.message);}
+  finally{bootSequence.elapsed=0;$('#boot-close').hidden=true;$('#first-boot-screen').hidden=true;bootPending=false;eyes.suspended=false;document.body.classList.remove('booting');$('#universe').inert=false;syncWelcome();}
+});
 async function keepAwake(){if(!navigator.wakeLock)return;try{wakeLock=await navigator.wakeLock.request('screen');}catch{}}
 $('#immersive-button').addEventListener('click',async()=>{$('#universe').classList.add('immersive');keepAwake();try{await document.documentElement.requestFullscreen?.();}catch{}try{await screen.orientation.lock('landscape');}catch{}});
 function rotationBlocked(){return matchMedia('(orientation: portrait) and (max-width: 700px)').matches&&!document.body.classList.contains('portrait-allowed');}
@@ -126,7 +135,7 @@ window.addEventListener('resize',()=>{if(rotationBlocked()&&panel.open)closePane
 $('#hatch').addEventListener('click',()=>{welcomePending=false;pet.hatched=true;pet.name=$('#first-name').value.trim().slice(0,24)||'Starboy';remember(pet,'Abrí los ojos y te conocí.');$('#welcome').close();affect(pet,'loved',8000);eyes.spark('heart');tone();keepAwake();update();save();toast(`Hola, ${pet.name}. Bienvenido a tu pequeño universo.`);});
 $('#welcome').addEventListener('cancel',event=>event.preventDefault());
 document.addEventListener('visibilitychange',()=>{if(document.hidden){save();wakeLock?.release().catch(()=>{});}else{advance(pet);update();if(wakeLock)keepAwake();if(initialized&&!firstBoot.completed)startFirstBoot();else syncWelcome();}});
-window.addEventListener('pagehide',()=>{sensors.stopAll();meetings.leave();save();});window.addEventListener('online',()=>toast('De vuelta en el universo.'));window.addEventListener('offline',()=>toast('Sin conexión. Tu mascota y sus ojos siguen contigo.'));
+window.addEventListener('pagehide',()=>{sensors.pause();meetings.leave();save();});window.addEventListener('online',()=>toast('De vuelta en el universo.'));window.addEventListener('offline',()=>toast('Sin conexión. Tu mascota y sus ojos siguen contigo.'));
 let lastSaved=Date.now();setInterval(()=>{update();if(!document.hidden&&Date.now()>nextBehavior){nextBehavior=Date.now()+40000+Math.random()*50000;if(!pet.asleep&&!pet.effect&&['happy','curious'].includes(mood(pet))){const behaviors=pet.behaviors||[pet.trait],behavior=behaviors[Math.floor(Math.random()*behaviors.length)];affect(pet,{curious:'curious',playful:'playful',dreamy:'sleepy',shy:'loved'}[behavior],5000);eyes.look((Math.random()-.5)*.8,(Math.random()-.5)*.5);update();}}if(Date.now()-lastSaved>10000){save();lastSaved=Date.now();}},1000);
 update();const engine=await eyes.init();$('#engine-note').textContent=`Port web experimental inspirado en Starboy de CREATURE. Ojos: ${engine==='original'?'motor original':'motor de reserva'}. Los cuidados y encuentros son funciones de esta adaptación.`;
 initialized=true;

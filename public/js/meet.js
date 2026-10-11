@@ -16,5 +16,5 @@ export class Meetings {
   }
   refresh(){if(this.ws?.readyState===WebSocket.OPEN)this.ws.send(JSON.stringify({type:'join',room:this.room,profile:this.callbacks.profile()}));}
   send(action,to){if(this.ws?.readyState!==WebSocket.OPEN)return false;this.ws.send(JSON.stringify({type:'action',action,to}));return true;}
-  leave(notify=true){clearTimeout(this.timer);this.room='';const ws=this.ws;this.ws=null;if(ws){ws.onclose=null;ws.close();}if(notify){this.callbacks.status('disconnected','');this.callbacks.peers([]);}}
+  leave(notify=true){clearTimeout(this.timer);this.room='';const ws=this.ws;this.ws=null;if(ws){ws.onclose=null;ws.close();}this.callbacks.peers([]);if(notify)this.callbacks.status('disconnected','');}
 }

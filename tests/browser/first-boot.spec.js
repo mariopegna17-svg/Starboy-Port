@@ -71,8 +71,7 @@ test('un error al cargar la secuencia permite entrar y no guarda una marca falsa
 
 test('una pestaña oculta libera el encendido para otra y conserva su progreso',async({page,context})=>{
   await page.clock.install();await page.goto('/');await ready(page);await page.clock.runFor(1000);
-  const progress=await page.evaluate(()=>window.starboy.bootSequence.elapsed);
-  await page.evaluate(()=>{Object.defineProperty(document,'hidden',{configurable:true,get:()=>true});document.dispatchEvent(new Event('visibilitychange'));});
+  const progress=await page.evaluate(()=>{Object.defineProperty(document,'hidden',{configurable:true,get:()=>true});document.dispatchEvent(new Event('visibilitychange'));return window.starboy.bootSequence.elapsed;});
   await expect.poll(()=>page.evaluate(()=>window.starboy.firstBoot.running===null)).toBe(true);
   const other=await context.newPage();await other.goto('/');await ready(other);
   await page.clock.runFor(1000);expect(await other.evaluate(()=>window.starboy.bootSequence.elapsed)).toBeGreaterThan(800);

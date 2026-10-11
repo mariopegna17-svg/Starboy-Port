@@ -6,7 +6,7 @@
 - SHA-256 del archivo: `9069ee36e57f0a29ec0469baedf7d82e94c34f24df0118a8bebd9e5a4a0bacc3`.
 - Vídeo analizado: 1515 fotogramas, **50,5 segundos**. No se incluye la grabación en el cliente.
 
-`sequence.json` contiene contornos vectoriales de la pantalla iluminada, normalizados a 400 × 400: punto sobre rosa, transición a negro, figura luminosa que crece y se divide, y secuencia de ojos. Se conserva el orden y tiempo de los fotogramas. El reproductor Canvas suaviza los contornos y dibuja únicamente la animación dentro de la pantalla circular. No reproduce el audio ambiental de la grabación.
+`sequence.json` contiene contornos vectoriales de la pantalla iluminada, normalizados a 400 × 400: punto sobre rosa, transición a negro, figura luminosa que crece y se divide, y secuencia de ojos. Se conserva el orden y tiempo de los fotogramas. El reproductor Canvas resamplea e interpola los contornos para suavizar el movimiento entre los fotogramas grabados y dibuja únicamente la animación dentro de la pantalla circular. Desde 41,8 segundos, los párpados cerrados y la apertura final se reconstruyen con curvas paramétricas, siguiendo las poses y colores del vídeo: amarillo, pupila verde a la izquierda y azul a la derecha. Esto evita los cortes de líneas y el color naranja que producía la segmentación de la grabación; esta parte es una reconstrucción visual, no un trazado exacto de cada píxel. No reproduce el audio ambiental de la grabación.
 
 Es una reconstrucción de una referencia filmada, no el recurso original del firmware. La posición del aparato se estabiliza, se descartan reflejos oscuros y se cuantizan los colores; la resolución, compresión y perspectiva de la cámara limitan la fidelidad de los detalles.
 

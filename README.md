@@ -8,7 +8,7 @@ Una mascota digital para iPhone en horizontal, inspirada en [Starboy de CREATURE
 - **Personalidad y vida persistente:** curioso, tímido, juguetón o soñador; energía, saciedad, felicidad, vínculo y recuerdos. El estado se conserva en este navegador y evoluciona al volver. Exportación e importación de la mascota en JSON.
 - **Cuidados:** alimentar, acariciar, dormir, despertar, calmar y jugar a atrapar cinco estrellas.
 - **Reacciones:** felicidad, cariño, sueño, hambre, ansiedad, frío, calor, mareo y tristeza, con miradas, parpadeos, expresiones y partículas.
-- **Cámara:** reconocimiento local de pulgar arriba, palma abierta, victoria, puño, pulgar abajo y dedo medio. La mano dirige la mirada; poca luz provoca sueño. No se envían imágenes al servidor.
+- **Cámara:** reconocimiento local de pulgar arriba, palma abierta, victoria, puño, pulgar abajo y dedo medio. La mano dirige la mirada; poca luz provoca sueño. El reconocimiento se ejecuta en un Worker cuando el navegador lo permite; los gestos sostenidos reaccionan una sola vez. Una vista local permite comprobar el encuadre. No se envían imágenes al servidor.
 - **Micrófono:** medición local de volumen; el ruido pone nerviosa a la mascota. No se graba ni se envía audio.
 - **Movimiento:** inclinación para dirigir la mirada y sacudidas para marearla, con solicitud de permiso en iOS.
 - **Encuentros:** salas WebSocket para hasta ocho mascotas. Descubren los ojos de otras, se saludan, juegan, aprenden comportamientos de sus amigos y pueden intercambiar ojos. El intercambio va dirigido al primer amigo de la sala.
@@ -19,11 +19,11 @@ Una mascota digital para iPhone en horizontal, inspirada en [Starboy de CREATURE
 
 El primer encendido es una reconstrucción Canvas trazada desde [el vídeo aportado de @lilguynet](https://www.tiktok.com/@lilguynet/video/7659459357876276511), no una extracción del firmware: conserva la secuencia y los tiempos del archivo de referencia, con las limitaciones de detalle y color de una grabación de cámara. [Procedencia y reproducción del trazado](public/boot/PROVENANCE.md).
 
-El control guarda una marca independiente de la mascota al terminar la animación. Recargar, importar o crear otra mascota no borra esa marca; borrar los datos del sitio o cambiar de navegador permite otro primer encendido. Si cierras antes de terminar, se vuelve a intentar al abrir. La reproducción se pausa al ocultar la página o mostrar el aviso de orientación, y sus trazos se guardan con la PWA para funcionar sin conexión. La bienvenida aparece después y conserva su estado si cierras antes de pulsar «Conocer a mi Starboy».
+El control guarda una marca independiente de la mascota al terminar la animación. Recargar, importar o crear otra mascota no borra esa marca; borrar los datos del sitio o cambiar de navegador permite otro primer encendido. Si cierras antes de terminar, se vuelve a intentar al abrir. La reproducción se pausa al ocultar la página o mostrar el aviso de orientación, y sus trazos se guardan con la PWA para funcionar sin conexión. La bienvenida aparece después y conserva su estado si cierras antes de pulsar «Conocer a mi Starboy». Los contornos se interpolan entre fotogramas; los párpados finos y los ojos amarillos finales se reconstruyen con curvas limpias. En Ajustes, «Ver animación de encendido» permite repetirla manualmente sin borrar la mascota ni cambiar la marca del primer encendido.
 
 Safari no proporciona temperatura ambiente ni nivel de batería del iPhone: la temperatura tiene un control **simulado** y el pulgar arriba muestra la **energía de la mascota**. En navegadores con Battery Status API se muestra la batería real del dispositivo. La vibración y el bloqueo de orientación dependen del navegador; no se finge su disponibilidad. En iPhone puede ser necesario desactivar el bloqueo de orientación y añadir la app a la pantalla de inicio.
 
-Los encuentros requieren una sala compartida y conexión a internet; no detectan dispositivos próximos automáticamente. Las salas son temporales y desaparecen al desconectar o reiniciar el servidor. No hay cuentas ni sincronización en la nube: cambiar de navegador o borrar sus datos requiere una copia exportada. Los gestos sin cámara están disponibles como controles manuales. El reconocimiento de gestos sin conexión requiere haberlo activado una vez para guardar modelo y runtime.
+Los encuentros requieren una sala compartida y conexión a internet; no detectan dispositivos próximos automáticamente. Las salas son temporales y desaparecen al desconectar o reiniciar el servidor. No hay cuentas ni sincronización en la nube: cambiar de navegador o borrar sus datos requiere una copia exportada. Los gestos sin cámara están disponibles como controles manuales. El reconocimiento de gestos sin conexión requiere haberlo activado una vez para guardar modelo y runtime. Esos recursos se conservan al actualizar la app. Al salir de la app, los sensores se pausan y liberan sus pistas; al volver, toca «Reanudar» en Ambiente. La alternativa para navegadores sin Worker reduce la frecuencia de análisis.
 
 ## Desarrollo
 
@@ -57,7 +57,7 @@ NODE_USE_ENV_PROXY=1 npm run model
    - Start: `npm start`
    - Healthcheck: `/healthz`
 4. Abre la URL HTTPS que Render asigne en Safari. No necesitas secretos ni una base de datos.
-5. Gira el iPhone, añade la app a pantalla de inicio y activa los sensores que quieras.
+5. Gira el iPhone, añade la app a pantalla de inicio y activa los sensores que quieras. El icono para iPhone se sirve en `apple-touch-icon.png` (180 × 180); Android usa un icono separado con márgenes de recorte seguros. Si ya existía un acceso con un icono antiguo, vuelve a añadirlo desde Safari.
 
 El plan gratuito puede suspender el servicio cuando no se utiliza: despertar el servidor puede tardar y las salas se reinician. Los cuidados y ojos instalados siguen funcionando sin conexión.
 
@@ -68,7 +68,7 @@ npm test
 npm run test:browser
 ```
 
-Las pruebas de Node verifican persistencia, cuidados, catálogo y salas WebSocket reales. Las de navegador cubren la reproducción completa del primer encendido, persistencia al recargar/importar/reiniciar, interrupciones, pausa por orientación o visibilidad y relevo entre pestañas, además de un viewport táctil de iPhone horizontal, todos los estilos, PWA sin conexión, permisos separados, reconocimiento con imágenes reales de referencia e intercambio entre dos navegadores. Usa el Chromium del sistema si existe; en otras máquinas ejecuta `npx playwright install chromium`. Un viewport móvil de Chromium no sustituye una prueba física en Safari.
+Las pruebas de Node verifican persistencia, cuidados, catálogo y salas WebSocket reales. Las de navegador cubren la reproducción completa del primer encendido, persistencia al recargar/importar/reiniciar, interrupciones, pausa por orientación o visibilidad y relevo entre pestañas, además de un viewport táctil de iPhone horizontal, todos los estilos, PWA sin conexión, permisos separados, cancelación durante la solicitud, denegación e interrupción de cámara, retorno del segundo plano, reconocimiento tras recargar sin conexión, alternativa sin Worker, recuperación de los ojos, icono de iPhone, reconocimiento con imágenes reales de referencia e intercambio entre dos navegadores. Usa el Chromium del sistema si existe; en otras máquinas ejecuta `npx playwright install chromium`. Un viewport móvil de Chromium no sustituye una prueba física en Safari.
 
 ## Procedencia
 

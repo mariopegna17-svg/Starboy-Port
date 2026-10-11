@@ -5,12 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
   <meta name="theme-color" content="#050607">
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Starboy">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="description" content="Tu pequeño compañero digital. Ojos originales, una personalidad única y un universo en tu bolsillo.">
   <title>Starboy · tu pequeño universo</title>
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="icon" type="image/svg+xml" href="/icon.svg">
-  <link rel="apple-touch-icon" href="/icon-192.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=2">
   <link rel="stylesheet" href="/styles.css">
   <script>
     window.eyeEngineReady = new Promise(resolve => {
@@ -58,11 +59,13 @@
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
     <div id="battery-card" class="battery-card" hidden><span class="eyebrow">UN POCO DE ENERGÍA</span><strong id="battery-value"></strong><span id="battery-detail"></span></div>
     <button id="play-star" class="play-star" aria-label="Atrapar la estrella" hidden>✦</button>
+    <div id="camera-home"><aside id="camera-preview" class="camera-preview" hidden aria-label="Vista de la cámara"><video id="camera-video" autoplay muted playsinline aria-label="Cámara frontal"></video><button id="camera-close" aria-label="Apagar cámara">×</button><span>GESTOS · EN TU IPHONE</span></aside></div>
     <span class="immersive-hint">Toca para volver a los controles</span>
   </main>
 
   <div id="first-boot-screen" hidden aria-label="Primer encendido de Starboy">
     <canvas id="boot-animation" width="400" height="400" aria-label="Animación del nacimiento de Starboy"></canvas>
+    <button id="boot-close" hidden>Cerrar animación ×</button>
     <span class="sr-only" role="status">Tu Starboy está despertando por primera vez.</span>
   </div>
 
@@ -74,7 +77,7 @@
   </dialog>
 
   <dialog id="control-panel" class="control-panel">
-    <div class="panel-top"><div><span class="eyebrow">SU PEQUEÑO MUNDO</span><h2 id="panel-title">Ojos</h2></div><button class="icon-button" id="close-panel" aria-label="Cerrar panel"><svg><use href="#i-close"/></svg></button></div>
+    <div class="panel-top"><div><span class="eyebrow">SU PEQUEÑO MUNDO</span><h2 id="panel-title">Ojos</h2></div><div id="camera-panel"></div><button class="icon-button" id="close-panel" aria-label="Cerrar panel"><svg><use href="#i-close"/></svg></button></div>
     <div class="panel-body"><nav class="panel-nav" aria-label="Secciones">
       <button data-panel="eyes"><svg><use href="#i-eyes"/></svg>Ojos</button><button data-panel="care"><svg><use href="#i-heart"/></svg>Cuidados</button><button data-panel="environment"><svg><use href="#i-world"/></svg>Ambiente</button><button data-panel="meet"><svg><use href="#i-friends"/></svg>Encuentros</button><button data-panel="diary"><svg><use href="#i-book"/></svg>Diario</button><button data-panel="settings"><svg><use href="#i-settings"/></svg>Ajustes</button>
     </nav><div class="panel-content">
@@ -103,12 +106,13 @@
       <section data-section="settings" hidden><div class="section-intro"><div><h3>A su manera. A la tuya.</h3><p>Todo lo que necesita para sentirse en casa.</p></div></div>
         <label class="setting-row"><span>Su nombre</span><input id="rename" maxlength="24" aria-label="Nombre de tu mascota" autocomplete="off"></label><div class="setting-row"><span>Personalidad</span><strong id="trait-name"></strong></div>
         <label class="setting-row"><span>Sonidos de la mascota<small>Pequeños tonos al jugar y recibir cariño</small></span><input id="sound-setting" type="checkbox" class="switch"></label><label class="setting-row"><span>Reducir movimiento<small>Animaciones suaves y menos partículas</small></span><input id="reduced-motion" type="checkbox" class="switch"></label>
-        <button id="install-button" class="wide-button">Añadir a la pantalla de inicio ↗</button><p id="install-help" class="footnote">En iPhone: Safari → Compartir → Añadir a pantalla de inicio. La app podrá abrirse a pantalla completa y funcionar sin conexión.</p>
+        <button id="replay-boot" class="wide-button">Ver animación de encendido ✦</button>
+        <button id="install-button" class="wide-button">Añadir a la pantalla de inicio ↗</button><p id="install-help" class="footnote">En iPhone: Safari → Compartir → Añadir a pantalla de inicio. La app tendrá su propio icono y podrá abrirse a pantalla completa.</p>
         <div class="backup-actions"><button id="export-pet">Exportar mi mascota ↓</button><label class="import-button">Importar mascota ↑<input id="import-pet" type="file" accept="application/json,.json" hidden></label></div><button id="reset-pet" class="danger-button">Comenzar una nueva vida</button><p class="footnote" id="engine-note">Port web experimental inspirado en Starboy de CREATURE. Los cuidados y encuentros son funciones de esta adaptación.</p>
       </section>
     </div></div>
   </dialog>
   <div id="rotate-screen" class="rotate-screen"><span class="rotate-phone">▯</span><span class="eyebrow">UN POQUITO MÁS DE ESPACIO</span><h2>Gira tu iPhone.</h2><p>Tu pequeño compañero se siente<br>mejor en horizontal.</p><button id="portrait-continue" class="text-button">Continuar en vertical ↗</button></div>
-  <script>if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));</script>
+  <script>if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js', {updateViaCache:'none'}).catch(() => {}));</script>
 </body>
 </html>
