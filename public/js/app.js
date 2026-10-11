@@ -4,14 +4,19 @@ import {Eyes} from './eyes.js';
 import {Sensors} from './sensors.js';
 import {Meetings} from './meet.js';
 import {FirstBoot} from './first-boot.js';
+import {BootSequence} from './boot-sequence.js';
 
 const $=selector=>document.querySelector(selector),$$=selector=>[...document.querySelectorAll(selector)];
 let pet;try{pet=restorePet(localStorage.getItem(STORAGE_KEY));}catch{}
 const firstLife=!pet||pet.hatched!==true;pet ||=createPet();if(firstLife&&matchMedia('(prefers-reduced-motion: reduce)').matches)pet.settings.reducedMotion=true;
 let bootStorage;try{bootStorage=localStorage;}catch{}
 const firstBoot=new FirstBoot(bootStorage);
+let bootPending=!firstBoot.completed;
+const bootSequence=new BootSequence($('#first-boot-screen'),{blocked:rotationBlocked});
+if(bootPending){document.body.classList.add('booting');$('#universe').inert=true;$('#first-boot-screen').hidden=false;}
 let storageWarning=false,toastTimer,batteryTimer,activePanel='',catalogShape=pet.shape,peers=[],seenPeers=new Set(),lastPet=0,playCount=0,playTimer,installPrompt,wakeLock,audio,welcomePending=firstLife,initialized=false,nextBehavior=Date.now()+45000;
 const panel=$('#control-panel'),eyes=new Eyes($('#eyes'),pet);
+eyes.suspended=bootPending;
 const hints={happy:'Está contento de estar contigo.',curious:'Todo es nuevo cuando miras con curiosidad.',sleepy:'Un pequeño descanso le vendría bien.',asleep:'Ahora mismo está soñando contigo.',hungry:'¿Y si le das un bocado de estrellas?',anxious:'Demasiado ruido para un chico tan pequeño.',cold:'Un poquito de calor, por favor.',hot:'Hasta las estrellas necesitan refrescarse.',dizzy:'El universo está dando vueltas.',angry:'Necesita un momento para calmarse.',sad:'Un poco de cariño le haría bien.',playful:'Atrapa esa estrella.',loved:'Contigo se siente en casa.'};
 function toast(message){$('#toast').textContent=message;$('#toast').classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.remove('visible'),4300);}
 function save(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(pet));}catch{if(!storageWarning){storageWarning=true;toast('No se puede guardar en este navegador. Exporta tu mascota para conservarla.');}}}
@@ -115,14 +120,25 @@ window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();ins
 async function keepAwake(){if(!navigator.wakeLock)return;try{wakeLock=await navigator.wakeLock.request('screen');}catch{}}
 $('#immersive-button').addEventListener('click',async()=>{$('#universe').classList.add('immersive');keepAwake();try{await document.documentElement.requestFullscreen?.();}catch{}try{await screen.orientation.lock('landscape');}catch{}});
 function rotationBlocked(){return matchMedia('(orientation: portrait) and (max-width: 700px)').matches&&!document.body.classList.contains('portrait-allowed');}
-function syncWelcome(){if(!initialized||!welcomePending)return;if(rotationBlocked()){if($('#welcome').open)$('#welcome').close();}else if(!$('#welcome').open)$('#welcome').showModal();}
+function syncWelcome(){if(!initialized||bootPending||!welcomePending||document.hidden)return;if(rotationBlocked()){if($('#welcome').open)$('#welcome').close();}else if(!$('#welcome').open)$('#welcome').showModal();}
 $('#eyes').addEventListener('pointermove',event=>{eyes.look((event.clientX/innerWidth-.5)*1.2,(event.clientY/innerHeight-.5)*.8);});$('#eyes').addEventListener('pointerleave',()=>eyes.look(0,0));$('#eyes').addEventListener('click',()=>{if($('#universe').classList.contains('immersive')){$('#universe').classList.remove('immersive');return;}perform('pet');});$('#portrait-continue').addEventListener('click',()=>{document.body.classList.add('portrait-allowed');syncWelcome();});
 window.addEventListener('resize',()=>{if(rotationBlocked()&&panel.open)closePanel();syncWelcome();});
 $('#hatch').addEventListener('click',()=>{welcomePending=false;pet.hatched=true;pet.name=$('#first-name').value.trim().slice(0,24)||'Starboy';remember(pet,'Abrí los ojos y te conocí.');$('#welcome').close();affect(pet,'loved',8000);eyes.spark('heart');tone();keepAwake();update();save();toast(`Hola, ${pet.name}. Bienvenido a tu pequeño universo.`);});
 $('#welcome').addEventListener('cancel',event=>event.preventDefault());
-document.addEventListener('visibilitychange',()=>{if(document.hidden){save();wakeLock?.release().catch(()=>{});}else{advance(pet);update();if(wakeLock)keepAwake();}});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){save();wakeLock?.release().catch(()=>{});}else{advance(pet);update();if(wakeLock)keepAwake();if(initialized&&!firstBoot.completed)startFirstBoot();else syncWelcome();}});
 window.addEventListener('pagehide',()=>{sensors.stopAll();meetings.leave();save();});window.addEventListener('online',()=>toast('De vuelta en el universo.'));window.addEventListener('offline',()=>toast('Sin conexión. Tu mascota y sus ojos siguen contigo.'));
 let lastSaved=Date.now();setInterval(()=>{update();if(!document.hidden&&Date.now()>nextBehavior){nextBehavior=Date.now()+40000+Math.random()*50000;if(!pet.asleep&&!pet.effect&&['happy','curious'].includes(mood(pet))){const behaviors=pet.behaviors||[pet.trait],behavior=behaviors[Math.floor(Math.random()*behaviors.length)];affect(pet,{curious:'curious',playful:'playful',dreamy:'sleepy',shy:'loved'}[behavior],5000);eyes.look((Math.random()-.5)*.8,(Math.random()-.5)*.5);update();}}if(Date.now()-lastSaved>10000){save();lastSaved=Date.now();}},1000);
 update();const engine=await eyes.init();$('#engine-note').textContent=`Port web experimental inspirado en Starboy de CREATURE. Ojos: ${engine==='original'?'motor original':'motor de reserva'}. Los cuidados y encuentros son funciones de esta adaptación.`;
-initialized=true;if(firstLife)syncWelcome();else{save();keepAwake();}
-window.starboy={get pet(){return pet;},get engine(){return eyes.engine;},sensors,meetings,eyes,firstBoot};
+initialized=true;
+window.starboy={get pet(){return pet;},get engine(){return eyes.engine;},sensors,meetings,eyes,firstBoot,bootSequence};
+async function startFirstBoot(){
+  if(firstBoot.completed||firstBoot.running||document.hidden)return;
+  bootPending=true;eyes.suspended=true;document.body.classList.add('booting');$('#universe').inert=true;$('#first-boot-screen').hidden=false;
+  if($('#welcome').open)$('#welcome').close();
+  try{await firstBoot.play(()=>bootSequence.play());}
+  catch(error){console.warn(error.message);toast('No se pudo cargar el primer encendido. Lo intentaremos al volver.');}
+  finally{bootPending=false;eyes.suspended=false;document.body.classList.remove('booting');$('#universe').inert=false;$('#first-boot-screen').hidden=true;syncWelcome();}
+}
+window.addEventListener('pageshow',event=>{if(event.persisted&&!firstBoot.completed)startFirstBoot();});
+if(bootPending)await startFirstBoot();
+if(welcomePending)syncWelcome();else{save();keepAwake();}

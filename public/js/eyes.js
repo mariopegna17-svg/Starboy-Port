@@ -32,7 +32,7 @@ export class Eyes {
   spark(kind='star'){for(let i=0;i<12;i++)this.stars.push({x:innerWidth/2+(Math.random()-.5)*innerWidth*.55,y:innerHeight*.5,vx:(Math.random()-.5)*.09,vy:-.025-Math.random()*.055,life:1,kind,size:7+Math.random()*10});}
   frame(time){
     if(!this.running)return;requestAnimationFrame(t=>this.frame(t));
-    const delta=Math.min(Math.max(time-this.last,0),50);this.last=time;if(document.hidden)return;
+    const delta=Math.min(Math.max(time-this.last,0),50);this.last=time;if(document.hidden||this.suspended)return;
     if(this.pet.settings.reducedMotion&&time-(this.paintedAt||0)<100&&!this.dirty&&!this.stars.length)return;
     this.paintedAt=time;const dt=Math.floor(delta);this.gaze.x+=(this.target.x-this.gaze.x)*.06;this.gaze.y+=(this.target.y-this.gaze.y)*.06;
     if(this.id>=0){

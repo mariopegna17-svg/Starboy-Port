@@ -1,6 +1,10 @@
 import { test,expect } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 
+// These tests cover the normal app after the first-boot sequence was watched.
+// Real first-boot playback and persistence are covered in first-boot.spec.js.
+test.beforeEach(async({page})=>{await page.addInitScript(()=>localStorage.setItem('starboy.first-boot.v1','complete'));});
+
 async function hatch(page){await page.goto('/');await page.waitForFunction(()=>window.starboy);await page.locator('#first-name').fill('Cosmo');await page.locator('#hatch').click();await expect(page.locator('#welcome')).not.toBeVisible();}
 async function open(page,name){await page.locator(`.dock [data-panel="${name}"]`).click();}
 
@@ -20,13 +24,6 @@ test('autoguardar antes de conocer a la mascota no omite la bienvenida al volver
   await page.clock.install();await page.goto('/');await page.waitForFunction(()=>window.starboy);await expect(page.locator('#welcome')).toBeVisible();await page.clock.fastForward(11000);
   expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('starboy.pet.v1')).hatched)).toBe(false);
   await page.reload();await page.waitForFunction(()=>window.starboy);await expect(page.locator('#welcome')).toBeVisible();await page.locator('#hatch').click();await page.reload();await page.waitForFunction(()=>window.starboy);await expect(page.locator('#welcome')).not.toBeVisible();
-});
-
-test('completar una secuencia inicial persiste al recargar y al crear otra mascota',async({page})=>{
-  await hatch(page);expect(await page.evaluate(()=>window.starboy.firstBoot.play(async()=>true))).toBe(true);
-  await page.reload();await page.waitForFunction(()=>window.starboy);expect(await page.evaluate(()=>window.starboy.firstBoot.completed)).toBe(true);
-  await open(page,'settings');page.once('dialog',dialog=>dialog.accept());await page.locator('#reset-pet').click();await expect(page.locator('#welcome')).toBeVisible();
-  expect(await page.evaluate(()=>window.starboy.firstBoot.play(()=>{throw new Error('No debe repetirse');}))).toBe(false);
 });
 
 test('orientación vertical ofrece girar o continuar sin bloquear la app',async({page})=>{
@@ -49,7 +46,9 @@ test('permisos de cámara y micrófono se activan por separado y apagan sus pist
 });
 
 test('dos navegadores se encuentran e intercambian realmente sus ojos',async({browser})=>{
-  const options={viewport:{width:844,height:390},baseURL:'http://127.0.0.1:3000',isMobile:true,hasTouch:true};const a=await browser.newContext(options),b=await browser.newContext(options);const pa=await a.newPage(),pb=await b.newPage();
+  const options={viewport:{width:844,height:390},baseURL:'http://127.0.0.1:3000',isMobile:true,hasTouch:true};const a=await browser.newContext(options),b=await browser.newContext(options);
+  for(const context of [a,b])await context.addInitScript(()=>localStorage.setItem('starboy.first-boot.v1','complete'));
+  const pa=await a.newPage(),pb=await b.newPage();
   try{await hatch(pa);await hatch(pb);
     await pa.evaluate(()=>{window.starboy.pet.palette=10;window.starboy.pet.shape=0;window.starboy.eyes.setLook(10,0);});await pb.evaluate(()=>{window.starboy.pet.palette=20;window.starboy.pet.shape=2;window.starboy.eyes.setLook(20,2);});
     for(const page of [pa,pb]){await open(page,'meet');await page.locator('#room-code').fill('TEST42');await page.locator('#room-form button').click();await expect(page.locator('#meet-status')).toHaveText('Sala TEST42');}

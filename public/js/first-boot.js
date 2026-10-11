@@ -3,8 +3,7 @@ export const FIRST_BOOT_KEY = 'starboy.first-boot.v1';
 /**
  * Keeps the physical device's first-boot sequence separate from a pet's life.
  * The renderer must resolve true only after the actual sequence has finished.
- * Until an authentic sequence is supplied, pass no renderer: nothing is marked
- * as watched, so the original animation can still run when it is available.
+ * An absent or interrupted renderer leaves the first-boot flag pending.
  */
 export class FirstBoot {
   constructor(storage) {

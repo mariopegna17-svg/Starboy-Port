@@ -13,12 +13,13 @@ Una mascota digital para iPhone en horizontal, inspirada en [Starboy de CREATURE
 - **Movimiento:** inclinación para dirigir la mirada y sacudidas para marearla, con solicitud de permiso en iOS.
 - **Encuentros:** salas WebSocket para hasta ocho mascotas. Descubren los ojos de otras, se saludan, juegan, aprenden comportamientos de sus amigos y pueden intercambiar ojos. El intercambio va dirigido al primer amigo de la sala.
 - **PWA:** instalación en pantalla de inicio, modo inmersivo, márgenes seguros del iPhone y funcionamiento sin conexión después de la primera carga.
+- **Primer encendido:** reconstrucción de los 50,5 segundos del vídeo del dispositivo físico, con el punto sobre fondo rosa, nacimiento luminoso y aparición de los ojos. Se reproduce una sola vez por navegador y origen; la marca se guarda al terminar.
 
 ## Límites de la adaptación
 
-El control de primer encendido guarda una marca independiente de la mascota y solo la completa cuando termina la reproducción; recargar, importar o crear otra mascota no borra esa marca. El controlador está preparado en `public/js/first-boot.js`. La bienvenida conserva su estado al cerrar y volver, incluso si hubo un autoguardado antes de pulsar «Conocer a mi Starboy».
+El primer encendido es una reconstrucción Canvas trazada desde [el vídeo aportado de @lilguynet](https://www.tiktok.com/@lilguynet/video/7659459357876276511), no una extracción del firmware: conserva la secuencia y los tiempos del archivo de referencia, con las limitaciones de detalle y color de una grabación de cámara. [Procedencia y reproducción del trazado](public/boot/PROVENANCE.md).
 
-La animación del primer encendido del aparato físico **todavía no está integrada**. La referencia aportada es [este vídeo de @lilguynet](https://www.tiktok.com/@lilguynet/video/7659459357876276511). El proxy del entorno devuelve HTTP 403 al conectar con TikTok, por lo que su secuencia aún no se ha podido examinar. `www.tiktok.com` está añadido al borrador de configuración de red; guardar y publicar ese cambio permite volver a comprobar el acceso. Cuando se pueda revisar el vídeo, hay que implementar su secuencia y conectar el reproductor a `firstBoot.play()`, resolviendo `true` únicamente al terminar. Hasta entonces, la app conserva pendiente la marca de primer encendido.
+El control guarda una marca independiente de la mascota al terminar la animación. Recargar, importar o crear otra mascota no borra esa marca; borrar los datos del sitio o cambiar de navegador permite otro primer encendido. Si cierras antes de terminar, se vuelve a intentar al abrir. La reproducción se pausa al ocultar la página o mostrar el aviso de orientación, y sus trazos se guardan con la PWA para funcionar sin conexión. La bienvenida aparece después y conserva su estado si cierras antes de pulsar «Conocer a mi Starboy».
 
 Safari no proporciona temperatura ambiente ni nivel de batería del iPhone: la temperatura tiene un control **simulado** y el pulgar arriba muestra la **energía de la mascota**. En navegadores con Battery Status API se muestra la batería real del dispositivo. La vibración y el bloqueo de orientación dependen del navegador; no se finge su disponibilidad. En iPhone puede ser necesario desactivar el bloqueo de orientación y añadir la app a la pantalla de inicio.
 
@@ -67,7 +68,7 @@ npm test
 npm run test:browser
 ```
 
-Las pruebas de Node verifican persistencia, cuidados, catálogo y salas WebSocket reales. Las de navegador cubren un viewport táctil de iPhone horizontal, todos los estilos, orientación, PWA sin conexión, permisos separados, reconocimiento con imágenes reales de referencia e intercambio entre dos navegadores. Usa el Chromium del sistema si existe; en otras máquinas ejecuta `npx playwright install chromium`. Un viewport móvil de Chromium no sustituye una prueba física en Safari.
+Las pruebas de Node verifican persistencia, cuidados, catálogo y salas WebSocket reales. Las de navegador cubren la reproducción completa del primer encendido, persistencia al recargar/importar/reiniciar, interrupciones, pausa por orientación o visibilidad y relevo entre pestañas, además de un viewport táctil de iPhone horizontal, todos los estilos, PWA sin conexión, permisos separados, reconocimiento con imágenes reales de referencia e intercambio entre dos navegadores. Usa el Chromium del sistema si existe; en otras máquinas ejecuta `npx playwright install chromium`. Un viewport móvil de Chromium no sustituye una prueba física en Safari.
 
 ## Procedencia
 
