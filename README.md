@@ -16,6 +16,8 @@ Una mascota digital para iPhone en horizontal, inspirada en [Starboy de CREATURE
 
 ## Límites de la adaptación
 
+El control de primer encendido guarda una marca independiente de la mascota y solo la completa cuando termina la reproducción; recargar, importar o crear otra mascota no borra esa marca. La animación del primer encendido del aparato físico **está pendiente de una referencia verificable**: no aparece en las páginas ni en el vídeo promocional examinados. El controlador está preparado en `public/js/first-boot.js`, pero la app no reproduce ni marca como vista una secuencia inventada. La bienvenida sí conserva su estado al cerrar y volver, incluso si hubo un autoguardado antes de pulsar «Conocer a mi Starboy».
+
 Safari no proporciona temperatura ambiente ni nivel de batería del iPhone: la temperatura tiene un control **simulado** y el pulgar arriba muestra la **energía de la mascota**. En navegadores con Battery Status API se muestra la batería real del dispositivo. La vibración y el bloqueo de orientación dependen del navegador; no se finge su disponibilidad. En iPhone puede ser necesario desactivar el bloqueo de orientación y añadir la app a la pantalla de inicio.
 
 Los encuentros requieren una sala compartida y conexión a internet; no detectan dispositivos próximos automáticamente. Las salas son temporales y desaparecen al desconectar o reiniciar el servidor. No hay cuentas ni sincronización en la nube: cambiar de navegador o borrar sus datos requiere una copia exportada. Los gestos sin cámara están disponibles como controles manuales. El reconocimiento de gestos sin conexión requiere haberlo activado una vez para guardar modelo y runtime.

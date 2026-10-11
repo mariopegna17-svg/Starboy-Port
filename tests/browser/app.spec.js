@@ -16,6 +16,19 @@ test('la mascota funciona sin conexión después de instalar el shell de la PWA'
   await hatch(page);await page.waitForFunction(()=>navigator.serviceWorker.controller);await context.setOffline(true);await page.reload();await page.waitForFunction(()=>window.starboy);await expect(page.locator('#eyes')).toHaveAttribute('data-engine','original');await expect(page.locator('#pet-name')).toHaveText('Cosmo');await open(page,'care');await page.locator('[data-action="pet"]').click();await expect(page.locator('#mood-label')).toHaveText('Querido');
 });
 
+test('autoguardar antes de conocer a la mascota no omite la bienvenida al volver',async({page})=>{
+  await page.clock.install();await page.goto('/');await page.waitForFunction(()=>window.starboy);await expect(page.locator('#welcome')).toBeVisible();await page.clock.fastForward(11000);
+  expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('starboy.pet.v1')).hatched)).toBe(false);
+  await page.reload();await page.waitForFunction(()=>window.starboy);await expect(page.locator('#welcome')).toBeVisible();await page.locator('#hatch').click();await page.reload();await page.waitForFunction(()=>window.starboy);await expect(page.locator('#welcome')).not.toBeVisible();
+});
+
+test('completar una secuencia inicial persiste al recargar y al crear otra mascota',async({page})=>{
+  await hatch(page);expect(await page.evaluate(()=>window.starboy.firstBoot.play(async()=>true))).toBe(true);
+  await page.reload();await page.waitForFunction(()=>window.starboy);expect(await page.evaluate(()=>window.starboy.firstBoot.completed)).toBe(true);
+  await open(page,'settings');page.once('dialog',dialog=>dialog.accept());await page.locator('#reset-pet').click();await expect(page.locator('#welcome')).toBeVisible();
+  expect(await page.evaluate(()=>window.starboy.firstBoot.play(()=>{throw new Error('No debe repetirse');}))).toBe(false);
+});
+
 test('orientación vertical ofrece girar o continuar sin bloquear la app',async({page})=>{
   await page.setViewportSize({width:390,height:844});await page.goto('/');await expect(page.locator('#rotate-screen')).toBeVisible();await page.locator('#portrait-continue').click();await expect(page.locator('#rotate-screen')).not.toBeVisible();await page.waitForFunction(()=>window.starboy);await page.locator('#hatch').click();await open(page,'environment');await expect(page.locator('#camera-toggle')).toBeVisible();
 });

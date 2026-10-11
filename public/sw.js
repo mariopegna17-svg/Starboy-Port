@@ -1,6 +1,6 @@
-const CACHE='starboy-v1';
-const SHELL=['/','/index.html','/styles.css','/js/app.js','/js/pet.js','/js/palettes.js','/js/eyes.js','/js/sensors.js','/js/meet.js','/icon.svg','/icon-192.png','/icon-512.png','/manifest.webmanifest','/vendor/starboy/animation_renderer.js','/vendor/starboy/animation_renderer.wasm','/vendor/starboy/anim_data.bin'];
-self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL)).then(()=>self.skipWaiting()));});
+const CACHE='starboy-v2';
+const SHELL=['/','/index.html','/styles.css','/js/app.js','/js/pet.js','/js/palettes.js','/js/eyes.js','/js/sensors.js','/js/meet.js','/js/first-boot.js','/icon.svg','/icon-192.png','/icon-512.png','/manifest.webmanifest','/vendor/starboy/animation_renderer.js','/vendor/starboy/animation_renderer.wasm','/vendor/starboy/anim_data.bin'];
+self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL.map(url=>new Request(url,{cache:'reload'})))).then(()=>self.skipWaiting()));});
 self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith('starboy-')&&key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim()));});
 self.addEventListener('fetch',event=>{
   const url=new URL(event.request.url);if(event.request.method!=='GET'||url.origin!==self.location.origin||url.pathname==='/healthz'||url.pathname==='/meet')return;
