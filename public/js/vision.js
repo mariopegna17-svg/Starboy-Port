@@ -36,7 +36,7 @@ export class Vision {
     const files=await FilesetResolver.forVisionTasks('/vendor/vision/wasm');
     if(this.closed)throw abortError();
     const recognizer=await GestureRecognizer.createFromOptions(files,{
-      baseOptions:{modelAssetBuffer:new Uint8Array(buffer),delegate:'CPU'},runningMode:'VIDEO',numHands:1,
+      baseOptions:{modelAssetBuffer:new Uint8Array(buffer),delegate:'CPU'},runningMode:'VIDEO',numHands:2,
       minHandDetectionConfidence:.55,minHandPresenceConfidence:.55,minTrackingConfidence:.55
     });
     if(this.closed){recognizer.close();throw abortError();}

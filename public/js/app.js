@@ -7,6 +7,7 @@ import {FirstBoot} from './first-boot.js';
 import {BootSequence} from './boot-sequence.js';
 import {EnvironmentSensors} from './environment-sensors.js';
 import {Visits} from './visits.js';
+import {GESTURES} from './gesture.js';
 
 const $=selector=>document.querySelector(selector),$$=selector=>[...document.querySelectorAll(selector)];
 let pet;try{pet=restorePet(localStorage.getItem(STORAGE_KEY));}catch{}
@@ -20,6 +21,11 @@ let storageWarning=false,toastTimer,batteryTimer,activePanel='',catalogShape=pet
 const panel=$('#control-panel'),eyes=new Eyes($('#eyes'),pet);
 eyes.suspended=bootPending;
 const hints={happy:'Está contento de estar contigo.',curious:'Todo es nuevo cuando miras con curiosidad.',sleepy:'Un pequeño descanso le vendría bien.',asleep:'Ahora mismo está soñando contigo.',hungry:'¿Y si le das un bocado de estrellas?',anxious:'Demasiado ruido para un chico tan pequeño.',cold:'Un poquito de calor, por favor.',hot:'Hasta las estrellas necesitan refrescarse.',dizzy:'El universo está dando vueltas.',angry:'Necesita un momento para calmarse.',sad:'Un poco de cariño le haría bien.',playful:'Atrapa esa estrella.',loved:'Contigo se siente en casa.'};
+const gestureMoods={nod:'happy',nope:'curious',surprise:'curious','look-left':'curious','look-right':'curious','look-up':'curious','look-down':'curious'};
+const gestureActions={thumbs:'Ver energía',middle:'Tristeza',pet:'Acariciar',play:'Jugar',love:'Cariño',calm:'Calmar',curious:'Curiosidad',hello:'Saludar',feed:'Dar de comer',celebrate:'Celebrar',kiss:'Beso',blink:'Parpadear',surprise:'Sorpresa',nod:'Asentir',nope:'Negar','look-left':'Mirar a la izquierda','look-right':'Mirar a la derecha','look-up':'Mirar arriba','look-down':'Mirar abajo'};
+for(const [type,label] of Object.entries(gestureActions)){
+  const item=document.createElement('div'),title=document.createElement('dt'),names=document.createElement('dd');title.textContent=label;names.textContent=Object.values(GESTURES).filter(gesture=>gesture.action===type).map(gesture=>gesture.label).join(' · ');item.append(title,names);$('#gesture-list').append(item);
+}
 function toast(message){$('#toast').textContent=message;$('#toast').classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.remove('visible'),4300);}
 function save(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(pet));}catch{if(!storageWarning){storageWarning=true;toast('No se puede guardar en este navegador. Exporta tu mascota para conservarla.');}}}
 function tone(kind='pet'){
@@ -44,9 +50,10 @@ function update(){
 function perform(type,{sensor=false,remote=false}={}){
   if(type==='pet'&&Date.now()-lastPet<700)return;if(type==='pet')lastPet=Date.now();
   if(type==='blink'){eyes.react('blink');return;}
-  const careType=['love','kiss','hello'].includes(type)?'pet':type;
+  const careType=['love','kiss','hello'].includes(type)?'pet':type==='celebrate'?'play':type;
   action(pet,careType);if(type==='curious')affect(pet,'curious',7000);if(type==='love'||type==='kiss')affect(pet,'loved',7000);
-  eyes.react(type==='hello'?'wave':type);if(['play','feed','pet','love','kiss','hello'].includes(type))tone(careType);haptic();
+  if(gestureMoods[type])affect(pet,gestureMoods[type],2500);
+  eyes.react(type==='hello'?'wave':type);if(['play','feed','pet','love','kiss','hello','celebrate'].includes(type))tone(careType);haptic();
   if(!remote&&['pet','feed','play','calm','thumbs'].includes(careType))meetings.sendVisitAction(careType);
   if(type==='play'){if(sensor){toast('¡A jugar juntos!');}else{closePanel();startGame();}}else if(type==='sleep')toast(pet.asleep?'Buenas noches, pequeño.':'Hola de nuevo, pequeño.');else if(type==='feed')toast('Un bocado de estrellas. Saciedad +25.');else if(type==='thumbs')showBattery();else if(type==='shake')toast('¡Demasiadas vueltas! Dale un momento.');else if(type==='middle')toast('Un poco triste. Una caricia puede ayudar.');update();save();if(meetings.visits.length)meetings.refresh();
 }
@@ -62,9 +69,9 @@ $('#play-star').addEventListener('click',()=>{playCount++;eyes.spark();tone('pla
 
 const sensors=new Sensors({
   noise:value=>{pet.environment.noise=Math.round(value);$('#noise').value=value;update();},
-  motion:()=>perform('shake'),gesture:type=>perform(type,{sensor:true}),gaze:(x,y)=>eyes.look(x,y),
+  motion:()=>perform('shake'),gesture:(type,name)=>{perform(type,{sensor:true});if(GESTURES[name]){$('#camera-gesture').textContent=`${GESTURES[name].label} → ${gestureActions[type]}`;$('#camera-gesture').hidden=false;}},gaze:(x,y)=>eyes.look(x,y),
   light:value=>{if(realSensors.state.light!=='on')reactToLight(value);},
-  status:(name,state,message)=>{const button=$(`#${name}-toggle`);button.textContent=state==='loading'?'Cancelar':state==='on'?'Apagar':state==='paused'?'Reanudar':'Activar';button.setAttribute('aria-pressed',String(state==='on'));button.dataset.state=state;button.disabled=false;$(`#${name}-note`).textContent=message;if(state==='error')toast(message);if(name==='microphone')$('#noise').disabled=state==='on';if(name==='camera')$('#camera-preview').hidden=!['loading','on'].includes(state);}
+  status:(name,state,message)=>{const button=$(`#${name}-toggle`);button.textContent=state==='loading'?'Cancelar':state==='on'?'Apagar':state==='paused'?'Reanudar':'Activar';button.setAttribute('aria-pressed',String(state==='on'));button.dataset.state=state;button.disabled=false;$(`#${name}-note`).textContent=message;if(state==='error')toast(message);if(name==='microphone')$('#noise').disabled=state==='on';if(name==='camera'&&state!=='on')$('#camera-gesture').hidden=true;}
 });
 function reactToLight(value){if(value<.09&&!pet.asleep&&Date.now()-(pet.lastDark||0)>90000){pet.lastDark=Date.now();affect(pet,'sleepy',5000);update();}}
 const realSensors=new EnvironmentSensors({
@@ -73,8 +80,6 @@ const realSensors=new EnvironmentSensors({
   status:(name,state,message)=>{const button=$(`#${name}-sensor-toggle`);button.textContent=state==='loading'?'Cancelar':state==='on'?'Desconectar':state==='paused'?'Reanudar':'Conectar';button.setAttribute('aria-pressed',String(state==='on'));$(`#${name}-sensor-note`).textContent=message;if(name==='temperature'){$('#temperature').disabled=state==='on';$('#temperature-source').textContent=state==='on'?'Medida por tu termómetro Bluetooth.':'Temperatura manual.';}if(name==='light'&&state!=='on')$('#light-reading').textContent='';if(state==='error')toast(message);}
 });
 for(const name of ['temperature','light']){const button=$(`#${name}-sensor-toggle`);button.disabled=!realSensors.available(name);if(button.disabled)button.textContent='No disponible';$(`#${name}-sensor-note`).textContent=realSensors.note(name);button.addEventListener('click',()=>realSensors.toggle(name));}
-$('#camera-close').addEventListener('click',()=>sensors.stop('camera'));
-function moveCamera(host){if($('#camera-preview').parentElement!==host){host.append($('#camera-preview'));if(['loading','on'].includes(sensors.state.camera)&&sensors.video.srcObject)sensors.video.play().catch(()=>{});}}
 
 const profile=()=>({id:pet.id,name:pet.name,palette:pet.palette,shape:pet.shape,trait:pet.trait,mood:mood(pet)});
 const meetings=new Meetings({profile,
@@ -97,12 +102,12 @@ const visits=new Visits({container:$('#visitor-space'),myId:()=>pet.id,settings:
 function openPanel(name){
   activePanel=name;const titles={eyes:'Ojos',care:'Cuidados',environment:'Ambiente',meet:'Encuentros',diary:'Diario',settings:'Ajustes'};$('#panel-title').textContent=titles[name];
   $$('[data-section]').forEach(s=>s.hidden=s.dataset.section!==name);$$('.panel-nav [data-panel]').forEach(b=>b.classList.toggle('active',b.dataset.panel===name));
-  moveCamera($('#camera-panel'));if(!panel.open)panel.showModal();$('.panel-content').scrollTop=0;update();if(name==='eyes'){catalogShape=pet.shape;renderCatalog();}if(name==='diary')renderDiary();
+  if(!panel.open)panel.showModal();$('.panel-content').scrollTop=0;update();if(name==='eyes'){catalogShape=pet.shape;renderCatalog();}if(name==='diary')renderDiary();
 }
-function closePanel(){panel.close();activePanel='';moveCamera($('#camera-home'));}
+function closePanel(){panel.close();activePanel='';}
 $$('[data-panel]').forEach(button=>button.addEventListener('click',()=>openPanel(button.dataset.panel)));$('#identity-button').addEventListener('click',()=>openPanel('care'));$('#close-panel').addEventListener('click',closePanel);
 panel.addEventListener('click',event=>{if(event.target===panel){const rect=panel.getBoundingClientRect();if(event.clientX<rect.left||event.clientX>rect.right||event.clientY<rect.top||event.clientY>rect.bottom)closePanel();}});
-panel.addEventListener('close',()=>{activePanel='';if(!panel.open)moveCamera($('#camera-home'));});$$('[data-action]').forEach(b=>b.addEventListener('click',()=>perform(b.dataset.action)));
+panel.addEventListener('close',()=>{activePanel='';});$$('[data-action]').forEach(b=>b.addEventListener('click',()=>perform(b.dataset.action)));
 $$('[data-sensor]').forEach(b=>b.addEventListener('click',()=>sensors.toggle(b.dataset.sensor)));
 $('#temperature').value=pet.environment.temperature;$('#temperature').addEventListener('input',event=>{pet.environment.temperature=Number(event.target.value);pet.effect=null;update();save();});$('#noise').value=pet.environment.noise;$('#noise').addEventListener('input',event=>{pet.environment.noise=Number(event.target.value);pet.effect=null;update();save();});
 

@@ -1,8 +1,8 @@
 import {Vision} from './vision.js';
-import {GestureGate,FaceGate,gestureName} from './gesture.js';
+import {GestureGate,FaceGate} from './gesture.js';
 import {GazeTracker} from './tracking.js';
 
-const NOTES={camera:'Sigue tu cabeza y reconoce manos, sonrisas, besos y parpadeos.',microphone:'El ruido fuerte lo pone nervioso.',motion:'Inclina o agita suavemente el iPhone.'};
+const NOTES={camera:'Sigue tu cabeza y reconoce dedos, ambas manos, guiños y expresiones. Consulta la guía de gestos.',microphone:'El ruido fuerte lo pone nervioso.',motion:'Inclina o agita suavemente el iPhone.'};
 const stopTracks=stream=>stream?.getTracks().forEach(track=>track.stop());
 
 export class Sensors {
@@ -84,7 +84,7 @@ export class Sensors {
       vision=new Vision();this.vision=vision;await vision.init();
       if(generation!==this.generation.camera){vision.close();return;}
       this.gate=new GestureGate();this.faceGate=new FaceGate();this.tracker=new GazeTracker();this.lastVideoTime=-1;this.lightFrames=0;this.brightness=null;
-      this.status('camera','on',vision.faceEnabled?'Sigue tu cabeza. Prueba una sonrisa, un beso, OK, una pinza o saludar con la mano.':'Gestos de mano activos. El modelo facial no está disponible; vuelve a activar con conexión para seguir tu cabeza.');
+      this.status('camera','on',vision.faceEnabled?'Cámara activa. Sigue tu cabeza y reconoce ambas manos y expresiones; consulta la guía de abajo.':'Cámara activa: gestos de ambas manos. Vuelve a activar con conexión para añadir seguimiento y expresiones de la cara.');
       this.schedule(generation);
     }catch(error){
       if(generation!==this.generation.camera){stopTracks(stream);vision?.close();return;}
@@ -101,8 +101,8 @@ export class Sensors {
         if(generation!==this.generation.camera)return;
         const now=performance.now(),gaze=this.tracker.update(result,now);
         if(this.state.motion!=='on'||now-Math.max(this.tracker.faceAt,this.tracker.handAt)<=1000)this.callbacks.gaze?.(gaze.x,gaze.y);
-        if(result.handsFresh!==false){const action=this.gate.read(gestureName(result),result.landmarks?.[0],now);if(action)this.callbacks.gesture?.(action);}
-        if(result.faceFresh!==false){const action=this.faceGate.read(result.face,now);if(action)this.callbacks.gesture?.(action);}
+        if(result.handsFresh!==false){const action=this.gate.readResult(result,now);if(action)this.callbacks.gesture?.(action,this.gate.lastGesture);}
+        if(result.faceFresh!==false){const action=this.faceGate.read(result.face,now);if(action)this.callbacks.gesture?.(action,this.faceGate.lastGesture);}
         this.lightCtx.drawImage(this.video,0,0,16,16);const pixels=this.lightCtx.getImageData(0,0,16,16).data;
         let sum=0;for(let i=0;i<pixels.length;i+=4)sum+=pixels[i]*.2126+pixels[i+1]*.7152+pixels[i+2]*.0722;
         const brightness=sum/(pixels.length/4)/255;this.brightness=this.brightness===null?brightness:this.brightness*.85+brightness*.15;

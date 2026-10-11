@@ -12,12 +12,13 @@ test('los ojos siguen visibles y animados mientras cámara y micrófono están a
   await ready(page);await environment(page);await activate(page);
   expect(await page.evaluate(()=>window.starboy.sensors.vision.mode)).toBe('worker');
   await page.locator('#microphone-toggle').click();await expect(page.locator('#microphone-toggle')).toHaveAttribute('aria-pressed','true');
-  await page.locator('#close-panel').click();await expect(page.locator('#camera-preview')).toBeVisible();
+  await page.locator('#close-panel').click();await expect(page.locator('#camera-preview')).toHaveCount(0);await expect(page.locator('#camera-video')).toHaveCSS('opacity','0');
   await page.evaluate(()=>{window.eyeFrames=0;window.starboy.eyes.onFrame=()=>window.eyeFrames++;});
   await expect.poll(()=>pixels(page)).toBeGreaterThan(1000);
   await expect.poll(()=>page.evaluate(()=>window.eyeFrames)).toBeGreaterThan(45);
   await page.setViewportSize({width:932,height:430});await expect.poll(()=>pixels(page)).toBeGreaterThan(1000);
-  await page.locator('#camera-close').click();await expect(page.locator('#camera-preview')).not.toBeVisible();
+  await environment(page);await page.locator('#camera-toggle').click();await expect(page.locator('#camera-toggle')).toHaveAttribute('aria-pressed','false');
+  expect(await page.evaluate(()=>window.starboy.sensors.video.srcObject)).toBeNull();
   expect(await page.evaluate(()=>window.starboy.sensors.state.microphone)).toBe('on');expect(errors).toEqual([]);
 });
 
@@ -133,4 +134,26 @@ test('importar otra mascota termina el juego previo y respeta una bienvenida pen
   await page.locator('.dock [data-panel="settings"]').click();page.once('dialog',dialog=>dialog.accept());await page.locator('#import-pet').setInputFiles({name:'nova.json',mimeType:'application/json',buffer:Buffer.from(backup)});
   await expect(page.locator('#play-star')).not.toBeVisible();await expect(page.locator('#welcome')).toBeVisible();await expect(page.locator('#first-name')).toHaveValue('Nova');
   expect(await page.evaluate(()=>localStorage.getItem('starboy.first-boot.v1'))).toBe('complete');
+});
+
+for(const mode of ['worker','compatible'])test(`dos pulgares reales celebran una vez con captura invisible (${mode})`,async({page})=>{
+  if(mode==='compatible')await page.addInitScript(()=>{window.Worker=undefined;});
+  await ready(page);await environment(page);
+  const fixture='data:image/jpeg;base64,'+(await readFile(new URL('../fixtures/thumb_up.jpg',import.meta.url))).toString('base64');
+  await page.evaluate(async fixture=>{
+    const image=new Image();image.src=fixture;await image.decode();const canvas=document.createElement('canvas');canvas.width=480;canvas.height=360;const ctx=canvas.getContext('2d');
+    const scale=Math.min(220/image.width,320/image.height),x=(240-image.width*scale)/2,y=(360-image.height*scale)/2;
+    const paint=()=>{ctx.fillStyle='#fff';ctx.fillRect(0,0,480,360);ctx.drawImage(image,x,y,image.width*scale,image.height*scale);ctx.save();ctx.translate(480,0);ctx.scale(-1,1);ctx.drawImage(image,x,y,image.width*scale,image.height*scale);ctx.restore();};
+    paint();setInterval(paint,80);navigator.mediaDevices.getUserMedia=async()=>canvas.captureStream(15);
+    window.pairActions=[];const callback=window.starboy.sensors.callbacks.gesture;window.starboy.sensors.callbacks.gesture=(type,name)=>{window.pairActions.push({type,name});callback(type,name);};
+    window.pairFrames=0;const {Vision}=await import('/js/vision.js'),recognize=Vision.prototype.recognize;Vision.prototype.recognize=async function(...args){const result=await recognize.apply(this,args);if(result.handsFresh&&result.landmarks.length===2)window.pairFrames++;return result;};
+  },fixture);
+  await activate(page);expect(await page.evaluate(()=>window.starboy.sensors.vision.mode)).toBe(mode);
+  await expect.poll(()=>page.evaluate(()=>window.pairActions)).toEqual([{type:'celebrate',name:'Double_Thumb_Up'}]);
+  await expect(page.locator('#camera-gesture')).toHaveText('Dos pulgares arriba → Celebrar');await page.locator('#camera-gestures summary').click();
+  await expect(page.locator('#gesture-list')).toContainText('Corazón con ambas manos');await expect(page.locator('#gesture-list')).toContainText('Levantar las cejas');
+  await expect.poll(()=>page.evaluate(()=>window.pairFrames)).toBeGreaterThan(6);expect(await page.evaluate(()=>window.pairActions)).toHaveLength(1);
+  const time=await page.evaluate(()=>window.starboy.sensors.video.currentTime);await page.locator('#close-panel').click();await expect(page.locator('#camera-preview')).toHaveCount(0);
+  await expect(page.locator('#camera-video')).toHaveCSS('opacity','0');await expect.poll(()=>page.evaluate(()=>window.starboy.sensors.video.currentTime)).toBeGreaterThan(time+.5);
+  await expect.poll(()=>pixels(page)).toBeGreaterThan(1000);
 });

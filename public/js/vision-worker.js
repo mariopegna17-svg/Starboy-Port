@@ -11,7 +11,7 @@ self.onmessage=async({data})=>{
       const files=await FilesetResolver.forVisionTasks('/vendor/vision/wasm');
       recognizer=await GestureRecognizer.createFromOptions(files,{
         baseOptions:{modelAssetBuffer:new Uint8Array(data.model),delegate:'CPU'},
-        canvas:new OffscreenCanvas(320,240),runningMode:'VIDEO',numHands:1,
+        canvas:new OffscreenCanvas(320,240),runningMode:'VIDEO',numHands:2,
         minHandDetectionConfidence:.55,minHandPresenceConfidence:.55,minTrackingConfidence:.55
       });
       if(data.faceModel){

@@ -10,7 +10,15 @@ const REACTIONS={
   play:{duration:1800,squint:.06,bounce:7,blush:.2,kind:'star',count:10},
   calm:{duration:2600,squint:.18,bounce:0,blush:.45,kind:'star',count:5},
   feed:{duration:1800,squint:.13,bounce:3,blush:.5,kind:'star',count:7},
-  curious:{duration:1900,squint:.03,bounce:0,blush:.12,kind:'star',count:3}
+  curious:{duration:1900,squint:.03,bounce:0,blush:.12,kind:'star',count:3},
+  celebrate:{duration:2200,squint:.06,bounce:4,blush:.3,kind:'star',count:6},
+  surprise:{duration:1700,grow:.035,bounce:0,blush:.1,kind:'star',count:2},
+  nod:{duration:1500,bounce:0,blush:.15,kind:'star',count:0},
+  nope:{duration:1600,bounce:0,blush:.1,kind:'star',count:0},
+  'look-left':{duration:1900,gaze:{x:-.42,y:0},bounce:0,blush:0,kind:'star',count:0},
+  'look-right':{duration:1900,gaze:{x:.42,y:0},bounce:0,blush:0,kind:'star',count:0},
+  'look-up':{duration:1900,gaze:{x:0,y:-.35},bounce:0,blush:0,kind:'star',count:0},
+  'look-down':{duration:1900,gaze:{x:0,y:.35},bounce:0,blush:0,kind:'star',count:0}
 };
 const smooth=value=>{const n=Math.max(0,Math.min(1,value));return n*n*(3-2*n);};
 function heart(ctx,x,y,size){ctx.beginPath();ctx.moveTo(x,y+size*.8);ctx.bezierCurveTo(x-size*1.1,y,x-size*.85,y-size*.8,x,y-size*.3);ctx.bezierCurveTo(x+size*.85,y-size*.8,x+size*1.1,y,x,y+size*.8);ctx.closePath();}
@@ -109,7 +117,8 @@ export class Eyes {
     if(this.id>=0){
       try{
         if(dt>0)module._w8(this.id,dt);
-        module._w7(this.id,this.gaze.x,-this.gaze.y);
+        const reaction=this.reactionState(time),offset=reaction.profile?.gaze,clamp=value=>Math.max(-.6,Math.min(.6,value));
+        module._w7(this.id,clamp(this.gaze.x+(offset?.x||0)*reaction.strength),-clamp(this.gaze.y+(offset?.y||0)*reaction.strength));
         if(time>this.nextBlink){module._w4(this.id,string(BLINKS[Math.floor(Math.random()*BLINKS.length)]),1);this.nextBlink=time+2800+Math.random()*4200;}
         if(time>this.nextExpression&&!this.pet.settings.reducedMotion&&!this.reaction){module._w4(this.id,string(EXPRESSIONS[Math.floor(Math.random()*EXPRESSIONS.length)]),1);this.nextExpression=time+6000+Math.random()*7000;}
       }catch(error){this.useFallback(error);}
@@ -125,9 +134,10 @@ export class Eyes {
     const immersive=document.querySelector('#universe')?.classList.contains('immersive');
     const scale=Math.min(w*.88/350,h*(immersive?.82:.62)/180)*breathe;
     let shakeX=0,shakeY=0,rotation=0;
-    if(!reduced){if(this.mood==='cold')shakeX=Math.sin(time*.07)*3;if(this.mood==='dizzy')rotation=Math.sin(time*.003)*.06;if(this.mood==='playful')shakeY=Math.sin(time*.007)*9;if(profile){if(profile.affection){shakeY-=profile.lift*warmth;rotation+=profile.lean*reaction.direction*warmth;}else{shakeY-=Math.sin(reaction.progress*Math.PI*3)*profile.bounce*warmth;if(reaction.type==='wave')rotation+=Math.sin(reaction.progress*Math.PI*3)*.035*warmth;if(reaction.type==='curious')rotation+=.06*warmth;}}}
+    if(!reduced){if(this.mood==='cold')shakeX=Math.sin(time*.07)*3;if(this.mood==='dizzy')rotation=Math.sin(time*.003)*.06;if(this.mood==='playful')shakeY=Math.sin(time*.007)*9;if(profile){if(profile.affection){shakeY-=profile.lift*warmth;rotation+=profile.lean*reaction.direction*warmth;}else{shakeY-=Math.sin(reaction.progress*Math.PI*3)*profile.bounce*warmth;if(reaction.type==='wave')rotation+=Math.sin(reaction.progress*Math.PI*3)*.035*warmth;if(reaction.type==='curious')rotation+=.06*warmth;if(reaction.type==='nod')shakeY-=Math.sin(reaction.progress*Math.PI*4)*4*warmth;if(reaction.type==='nope')rotation+=Math.sin(reaction.progress*Math.PI*4)*.035*warmth;}}}
     ctx.save();ctx.translate(w/2+shakeX,h*.48+shakeY);ctx.rotate(rotation);ctx.scale(scale,scale);ctx.translate(-200,-200);
-    ctx.save();ctx.translate(200,200);ctx.scale(reduced||profile?.affection?1:1+warmth*.02,1-Math.min(.93,(clippedBlink?0:blink)*.92+(reduced?0:warmth*(profile?.squint||0))));ctx.translate(-200,-200);
+    const grow=reduced?0:warmth*(profile?.grow||0);
+    ctx.save();ctx.translate(200,200);ctx.scale(reduced||profile?.affection?1:1+warmth*(profile?.grow||.02),1+grow-Math.min(.93,(clippedBlink?0:blink)*.92+(reduced?0:warmth*(profile?.squint||0))));ctx.translate(-200,-200);
     if(this.id>=0){try{
       const draws=paths(this.id,this.scratch);
       if(draws.length){this.blankAt=null;paint(ctx,draws);}
@@ -158,8 +168,10 @@ export class Eyes {
     this.releaseEngine();this.stars=[];this.reaction=null;this.blinkReaction=null;this.onFrame=null;
   }
   fallback(ctx,time,blink=0){
+    const reaction=this.reactionState(time),offset=reaction.profile?.gaze;
+    const gaze={x:Math.max(-.6,Math.min(.6,this.gaze.x+(offset?.x||0)*reaction.strength)),y:Math.max(-.6,Math.min(.6,this.gaze.y+(offset?.y||0)*reaction.strength))};
     const hue=this.pet.palette*137.508%360,color=`hsl(${hue} 80% 70%)`;
-    for(const x of [125,275]){ctx.save();ctx.translate(x,200);ctx.scale(1,.94+(this.pet.settings.reducedMotion?0:Math.sin(time*.002)*.025));if(blink>0){ctx.beginPath();ctx.rect(-55,-50+49*blink,110,100-98*blink);ctx.clip();}ctx.fillStyle=color;ctx.beginPath();const round=this.pet.shape===0?42:50;ctx.roundRect(-round,-50,round*2,100,this.pet.shape===2?[10,40,35,35]:this.pet.shape===3?[50,50,18,18]:round);ctx.fill();ctx.fillStyle=`hsl(${hue} 45% 27%)`;ctx.beginPath();ctx.ellipse(this.gaze.x*20,this.gaze.y*15,22,30,0,0,Math.PI*2);ctx.fill();ctx.fillStyle='#fff';ctx.beginPath();ctx.ellipse(-8+this.gaze.x*10,-20+this.gaze.y*8,10,7,-.3,0,Math.PI*2);ctx.fill();ctx.restore();}
+    for(const x of [125,275]){ctx.save();ctx.translate(x,200);ctx.scale(1,.94+(this.pet.settings.reducedMotion?0:Math.sin(time*.002)*.025));if(blink>0){ctx.beginPath();ctx.rect(-55,-50+49*blink,110,100-98*blink);ctx.clip();}ctx.fillStyle=color;ctx.beginPath();const round=this.pet.shape===0?42:50;ctx.roundRect(-round,-50,round*2,100,this.pet.shape===2?[10,40,35,35]:this.pet.shape===3?[50,50,18,18]:round);ctx.fill();ctx.fillStyle=`hsl(${hue} 45% 27%)`;ctx.beginPath();ctx.ellipse(gaze.x*20,gaze.y*15,22,30,0,0,Math.PI*2);ctx.fill();ctx.fillStyle='#fff';ctx.beginPath();ctx.ellipse(-8+gaze.x*10,-20+gaze.y*8,10,7,-.3,0,Math.PI*2);ctx.fill();ctx.restore();}
   }
   expression(ctx,time){
     const mood=this.mood;
