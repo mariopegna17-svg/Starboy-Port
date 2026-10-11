@@ -1,7 +1,8 @@
 import {Vision} from './vision.js';
-import {GestureGate,gestureName} from './gesture.js';
+import {GestureGate,FaceGate,gestureName} from './gesture.js';
+import {GazeTracker} from './tracking.js';
 
-const NOTES={camera:'Pulgar arriba, palma, victoria y dedo medio.',microphone:'El ruido fuerte lo pone nervioso.',motion:'Inclina o agita suavemente el iPhone.'};
+const NOTES={camera:'Sigue tu cabeza y reconoce manos, sonrisas, besos y parpadeos.',microphone:'El ruido fuerte lo pone nervioso.',motion:'Inclina o agita suavemente el iPhone.'};
 const stopTracks=stream=>stream?.getTracks().forEach(track=>track.stop());
 
 export class Sensors {
@@ -64,7 +65,7 @@ export class Sensors {
         const rotated=[a.x*Math.cos(angle)-a.y*Math.sin(angle),a.x*Math.sin(angle)+a.y*Math.cos(angle)];
         if(this.motionAngle!==angle){this.motionAngle=angle;this.gravityOrigin=null;}
         this.gravityOrigin ||=rotated;
-        if(!this.handAt||performance.now()-this.handAt>1000)this.callbacks.gaze?.((rotated[0]-this.gravityOrigin[0])/20,-(rotated[1]-this.gravityOrigin[1])/25);
+        if(!this.tracker||performance.now()-Math.max(this.tracker.faceAt,this.tracker.handAt)>1000)this.callbacks.gaze?.((rotated[0]-this.gravityOrigin[0])/20,-(rotated[1]-this.gravityOrigin[1])/25);
       };
       window.addEventListener('devicemotion',this.motionHandler);this.status('motion','on','Mueve suavemente el iPhone; agítalo para marearlo.');
     }catch(error){if(generation===this.generation.motion)this.status('motion','error',this.explain(error,'movimiento'));}
@@ -74,7 +75,7 @@ export class Sensors {
     let stream,vision;
     try{
       if(!navigator.mediaDevices?.getUserMedia)throw new Error('La cámara necesita HTTPS.');
-      try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'user'},width:{ideal:320},height:{ideal:240},frameRate:{ideal:12}},audio:false});}
+      try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'user'},width:{ideal:480},height:{ideal:360},frameRate:{ideal:15}},audio:false});}
       catch(error){if(error.name!=='OverconstrainedError'||generation!==this.generation.camera)throw error;stream=await navigator.mediaDevices.getUserMedia({video:true,audio:false});}
       if(generation!==this.generation.camera){stopTracks(stream);return;}
       this.streams.camera=stream;this.watch('camera',stream,generation);
@@ -82,15 +83,15 @@ export class Sensors {
       if(generation!==this.generation.camera)return;
       vision=new Vision();this.vision=vision;await vision.init();
       if(generation!==this.generation.camera){vision.close();return;}
-      this.gate=new GestureGate();this.lastVideoTime=-1;this.lightFrames=0;this.brightness=null;this.handAt=0;
-      this.status('camera','on','Cámara activa. Mantén el gesto un momento y retira la mano para repetirlo.');
+      this.gate=new GestureGate();this.faceGate=new FaceGate();this.tracker=new GazeTracker();this.lastVideoTime=-1;this.lightFrames=0;this.brightness=null;
+      this.status('camera','on',vision.faceEnabled?'Sigue tu cabeza. Prueba una sonrisa, un beso, OK, una pinza o saludar con la mano.':'Gestos de mano activos. El modelo facial no está disponible; vuelve a activar con conexión para seguir tu cabeza.');
       this.schedule(generation);
     }catch(error){
       if(generation!==this.generation.camera){stopTracks(stream);vision?.close();return;}
       this.stop('camera');this.status('camera','error',this.explain(error,'cámara'));
     }
   }
-  schedule(generation){this.cameraTimer=setTimeout(()=>this.detect(generation),this.vision?.mode==='worker'?160:250);}
+  schedule(generation){this.cameraTimer=setTimeout(()=>this.detect(generation),this.vision?.mode==='worker'?80:180);}
   async detect(generation){
     if(generation!==this.generation.camera||document.hidden)return;
     try{
@@ -98,11 +99,10 @@ export class Sensors {
         this.lastVideoTime=this.video.currentTime;
         const result=await this.vision.recognize(this.video,performance.now());
         if(generation!==this.generation.camera)return;
-        const landmarks=result.landmarks?.[0];
-        if(landmarks&&Number.isFinite(landmarks[9]?.x)&&Number.isFinite(landmarks[9]?.y)){
-          this.handAt=performance.now();this.callbacks.gaze?.((.5-landmarks[9].x)*1.1,(landmarks[9].y-.5)*.8);
-        }else if(this.handAt&&performance.now()-this.handAt>1000){this.handAt=0;this.callbacks.gaze?.(0,0);}
-        const action=this.gate.read(gestureName(result));if(action)this.callbacks.gesture?.(action);
+        const now=performance.now(),gaze=this.tracker.update(result,now);
+        if(this.state.motion!=='on'||now-Math.max(this.tracker.faceAt,this.tracker.handAt)<=1000)this.callbacks.gaze?.(gaze.x,gaze.y);
+        if(result.handsFresh!==false){const action=this.gate.read(gestureName(result),result.landmarks?.[0],now);if(action)this.callbacks.gesture?.(action);}
+        if(result.faceFresh!==false){const action=this.faceGate.read(result.face,now);if(action)this.callbacks.gesture?.(action);}
         this.lightCtx.drawImage(this.video,0,0,16,16);const pixels=this.lightCtx.getImageData(0,0,16,16).data;
         let sum=0;for(let i=0;i<pixels.length;i+=4)sum+=pixels[i]*.2126+pixels[i+1]*.7152+pixels[i+2]*.0722;
         const brightness=sum/(pixels.length/4)/255;this.brightness=this.brightness===null?brightness:this.brightness*.85+brightness*.15;
@@ -122,7 +122,7 @@ export class Sensors {
     ++this.generation[name];
     if(name==='camera'){
       clearTimeout(this.cameraTimer);this.vision?.close();this.vision=null;
-      this.video.pause();this.video.srcObject=null;this.handAt=0;this.callbacks.gaze?.(0,0);
+      this.video.pause();this.video.srcObject=null;this.tracker=null;this.callbacks.gaze?.(0,0);
     }
     if(name==='microphone'){clearInterval(this.noiseTimer);this.audioContext?.close().catch(()=>{});this.audioContext=null;this.callbacks.noise?.(0);}
     if(name==='motion'){window.removeEventListener('devicemotion',this.motionHandler);this.callbacks.gaze?.(0,0);}
