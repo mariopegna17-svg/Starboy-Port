@@ -25,7 +25,7 @@ Safari no proporciona temperatura ambiente ni nivel de batería del iPhone: el c
 
 Los encuentros requieren una sala compartida y conexión a internet; no detectan dispositivos próximos automáticamente. Las salas son temporales y desaparecen al desconectar o reiniciar el servidor. No hay cuentas ni sincronización en la nube: cambiar de navegador o borrar sus datos requiere una copia exportada. Los gestos sin cámara están disponibles como controles manuales. El reconocimiento de gestos sin conexión requiere haberlo activado una vez para guardar modelo y runtime. Esos recursos se conservan al actualizar la app. Al salir de la app, los sensores se pausan y liberan sus pistas; al volver, toca «Reanudar» en Ambiente. La alternativa para navegadores sin Worker reduce la frecuencia de análisis.
 
-Las reacciones de cariño incluyen entrecerrado suave, rubor y corazones con movimiento y desvanecimiento; beso, saludo, comida, calma y juego tienen animaciones propias. El modo reducido limita movimiento y partículas.
+Las caricias, sonrisas y besos usan un parpadeo del motor original, una inclinación suave y rubor difuminado. Dos corazones pequeños aparecen a los lados y se desvanecen; repetir una caricia prolonga el gesto sin acumular corazones. Saludo, comida, calma y juego tienen animaciones propias. Con movimiento reducido, el cariño se limita a un corazón estático que se desvanece.
 
 ## Desarrollo
 
