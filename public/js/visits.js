@@ -30,10 +30,12 @@ export class Visits {
     const key=`${visit.host.id}/${visit.guest.id}`;
     const entering=this.key!==key;this.current={role,other,host:visit.host,guest:visit.guest};
     if(this.key!==key) {
-      this.eyes?.destroy();this.key=key;this.pet={...createPet(),...other,hatched:true};
+      this.eyes?.destroy();this.key=key;this.pet={...createPet(),...other,hatched:true,behaviors:[other.trait]};
       const settings=typeof this.settings==='function'?this.settings():this.settings;
       this.pet.settings={sound:false,reducedMotion:settings?.reducedMotion===true};
       this.eyes=new Eyes(this.canvas,this.pet);
+      this.eyes.idleAllowed=()=>!this.container.hidden&&!document.querySelector('#control-panel')?.open;
+      this.eyes.look(role==='guest'?.2:-.2,0);
       this.eyes.onFrame=()=>{if(this.eyes)this.eyes.mood=this.pet.effect?.until>Date.now()?mood(this.pet):this.remoteMood;};
       this.eyes.init();this.eyes.react('wave');
     } else {
