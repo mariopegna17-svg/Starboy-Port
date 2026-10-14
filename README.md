@@ -2,6 +2,8 @@
 
 Una mascota digital para iPhone en horizontal, inspirada en [Starboy de CREATURE](https://hesjustalittleguy.com/). Usa el motor público original para los ojos y añade una vida persistente, cuidados, sensores del navegador y encuentros entre mascotas. Es una adaptación web independiente; no contiene el firmware del dispositivo.
 
+[Investigación del Starboy físico: funcionamiento confirmado, fuentes y diferencias con esta adaptación](docs/STARBOY_REAL.md).
+
 ## Funciones
 
 - **400 estilos de ojos:** 100 paletas originales × punto, círculo, gato y bellota. Catálogo con búsqueda, rarezas, descubrimientos y selección aleatoria ponderada.

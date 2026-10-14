@@ -2,6 +2,7 @@
 
 - Autor de la grabación: **@lilguynet**.
 - Referencia: https://www.tiktok.com/@lilguynet/video/7659459357876276511
+- Título confirmado el 14 de octubre de 2026 mediante la [API pública oEmbed de TikTok](https://www.tiktok.com/oembed?url=https://www.tiktok.com/@lilguynet/video/7659459357876276511): “Spawn animation! Your first interaction with STARBOY. Plays once and never again”. Confirma que el nacimiento se reproduce una sola vez; no acredita que todos los dispositivos terminen con los colores de esta grabación.
 - Archivo aportado por el usuario: `lilguynet_video_watermark.mp4`, 576 × 1024, 30 fps.
 - SHA-256 del archivo: `9069ee36e57f0a29ec0469baedf7d82e94c34f24df0118a8bebd9e5a4a0bacc3`.
 - Vídeo analizado: 1515 fotogramas, **50,5 segundos**. No se incluye la grabación en el cliente.
